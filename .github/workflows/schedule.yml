@@ -1,0 +1,17 @@
+name: Scheduled Job
+
+on:
+  schedule:
+    - cron: "0 0 */5 * *"  # Every 5 days at midnight UTC
+  workflow_dispatch:
+
+jobs:
+  run-job:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Call Supabase Function
+        run: |
+          curl -X POST "https://ocpagwegucxqqdmgyidp.supabase.co/functions/v1/clever-processor" \
+          -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
+          -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}"

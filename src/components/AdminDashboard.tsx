@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Plus, ArrowLeft, LogOut } from 'lucide-react';
+import PetDetail from './PetDetail';
 import {
   Dialog,
   DialogContent,
@@ -396,194 +397,12 @@ export default function AdminDashboard({ onBackToPublic }: { onBackToPublic: () 
 
   // Case Detail View
   if (currentView === 'case-detail' && selectedCase) {
-    const totalPaid = calculateTotalPaid(selectedCase.donations);
-    const remaining = selectedCase.estimated_cost - totalPaid;
-    const percentagePaid = Math.round((totalPaid / selectedCase.estimated_cost) * 100);
-
     return (
-      <div className="min-h-screen bg-slate-50">
-        {/* Header */}
-        <div className="bg-white border-b border-slate-200 shadow-sm">
-          <div className="container mx-auto px-4 py-6">
-            <div className="flex items-center gap-4">
-              <Button variant="outline" size="sm" onClick={backToDashboard}>
-                <ArrowLeft className="size-4" />
-              </Button>
-              <div className="flex-1">
-                <h1 className="text-2xl text-slate-900">Case: {selectedCase.animal_name}</h1>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="container mx-auto px-4 py-8">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Main Case Details */}
-            <div className="lg:col-span-2 space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Case Information</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Pet Name</Label>
-                    <Input
-                      value={selectedCase.animal_name}
-                      onChange={(e) => handleUpdateCase('animal_name', e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Treatment Description</Label>
-                    <Textarea
-                      value={selectedCase.medical_condition}
-                      onChange={(e) => handleUpdateCase('medical_condition', e.target.value)}
-                      rows={3}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Total Debt Amount</Label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={selectedCase.estimated_cost}
-                      onChange={(e) => handleUpdateCase('estimated_cost', parseFloat(e.target.value))}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Status</Label>
-                    <Select
-                      value={selectedCase.status}
-                      onValueChange={(value) => handleUpdateCase('status', value as CaseStatus)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="pending">Pending</SelectItem>
-                        <SelectItem value="partially_funded">Partially Funded</SelectItem>
-                        <SelectItem value="funded">Funded</SelectItem>
-                        <SelectItem value="closed">Closed</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Vet Payment Link</Label>
-                    <Input
-                      value={selectedCase.payment_link || ''}
-                      onChange={(e) => handleUpdateCase('payment_link', e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Pet Story</Label>
-                    <Textarea
-                      value={selectedCase.pet_story || ''}
-                      onChange={(e) => handleUpdateCase('pet_story', e.target.value)}
-                      rows={4}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Sidebar - Financial Summary & Donations */}
-            <div className="space-y-6">
-              {/* Financial Summary */}
-              <Card className="bg-white">
-                <CardHeader>
-                  <CardTitle>Financial Summary</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-slate-600">Total Debt:</span>
-                    <span className="font-semibold">${selectedCase.estimated_cost.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-600">Total Paid:</span>
-                    <span className="font-semibold text-green-700">${totalPaid.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-600">Remaining:</span>
-                    <span className="font-semibold text-blue-700">${remaining.toFixed(2)}</span>
-                  </div>
-                  <div className="pt-3 border-t border-slate-200">
-                    <div className="flex justify-between text-sm mb-2">
-                      <span className="text-slate-600">Progress</span>
-                      <span className="text-slate-900 font-semibold">{percentagePaid}%</span>
-                    </div>
-                    <div className="w-full bg-slate-200 rounded-full h-3">
-                      <div
-                        className="bg-gradient-to-r from-blue-500 to-blue-600 h-3 rounded-full transition-all"
-                        style={{ width: `${Math.min(percentagePaid, 100)}%` }}
-                      />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Add Donation */}
-              <Card className="border-green-200 bg-green-50">
-                <CardHeader>
-                  <CardTitle className="text-lg">Add Donation</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="space-y-2">
-                    <Label htmlFor="donation-amount">Amount</Label>
-                    <Input
-                      id="donation-amount"
-                      type="number"
-                      step="0.01"
-                      placeholder="0.00"
-                      value={newDonation.amount}
-                      onChange={(e) => setNewDonation({ ...newDonation, amount: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="donor-name">Donor Name</Label>
-                    <Input
-                      id="donor-name"
-                      placeholder="Optional"
-                      value={newDonation.donor_name}
-                      onChange={(e) => setNewDonation({ ...newDonation, donor_name: e.target.value })}
-                    />
-                  </div>
-                  <Button
-                    onClick={handleAddDonation}
-                    className="w-full bg-green-600 hover:bg-green-700"
-                    disabled={!newDonation.amount}
-                  >
-                    Record Donation
-                  </Button>
-                </CardContent>
-              </Card>
-
-              {/* Recent Donations */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Recent Donations</CardTitle>
-                  <CardDescription>{selectedCase.donations.length} total donations</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {selectedCase.donations.length === 0 ? (
-                    <p className="text-sm text-slate-600">No donations yet</p>
-                  ) : (
-                    <div className="space-y-2 max-h-64 overflow-y-auto">
-                      {[...selectedCase.donations].reverse().map((donation) => (
-                        <div key={donation.id} className="flex justify-between text-sm py-2 border-b last:border-0">
-                          <div>
-                            <p className="font-medium text-slate-900">${donation.amount.toFixed(2)}</p>
-                            <p className="text-xs text-slate-600">{donation.donor_name}</p>
-                          </div>
-                          <div className="text-xs text-slate-500">{new Date(donation.date).toLocaleDateString()}</div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </div>
-      </div>
+      <PetDetail
+        pet={selectedCase}
+        donations={selectedCase.donations}
+        onBack={backToDashboard}
+      />
     );
   }
 
