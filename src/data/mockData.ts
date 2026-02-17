@@ -51,8 +51,8 @@ export const mockInvoices: Invoice[] = [
       email: 'rescue@animalshelter.org'
     },
     invoice_file: 'max_invoice.pdf',
-    pet_photo: 'max.jpg',
-    pet_story: 'Max is a 5-year-old golden retriever who was found abandoned with a severe injury. He needs emergency surgery to save his life.',
+    pet_photo: 'https://images.unsplash.com/photo-1637852422069-81efc85e0a79?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxnb2xkZW4lMjByZXRyaWV2ZXIlMjBkb2d8ZW58MXx8fHwxNzcwNjAzNjU4fDA&ixlib=rb-4.1.0&q=80&w=1080',
+    pet_story: 'Max is a 5-year-old golden retriever who was found abandoned with a severe injury. He needs emergency surgery to save his life. Max was discovered limping on the side of the road by a Good Samaritan who immediately brought him to our rescue. Our veterinarians examined him and found that he has a severe leg fracture that requires immediate surgical intervention.',
     instagram_link: 'https://www.instagram.com/max_the_golden/',
     donations: [
       {
@@ -83,8 +83,8 @@ export const mockInvoices: Invoice[] = [
       email: 'rescue@animalshelter.org'
     },
     invoice_file: 'luna_invoice.pdf',
-    pet_photo: 'luna.jpg',
-    pet_story: 'Luna is a 3-year-old tabby cat who has been suffering from dental issues. She needs a dental cleaning and extractions to relieve her pain.',
+    pet_photo: 'https://images.unsplash.com/photo-1670739088209-64414249354b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0YWJieSUyMGNhdCUyMHBvcnRyYWl0fGVufDF8fHx8MTc3MDcyMjI3OHww&ixlib=rb-4.1.0&q=80&w=1080',
+    pet_story: 'Luna is a 3-year-old tabby cat who has been suffering from dental issues. She needs a dental cleaning and extractions to relieve her pain. Luna was surrendered to us by her previous owner who could no longer afford her medical care. She has been in discomfort for weeks, unable to eat properly due to severe dental disease.',
     instagram_link: 'https://www.instagram.com/luna_the_tabby/',
     donations: [
       {
@@ -115,8 +115,8 @@ export const mockInvoices: Invoice[] = [
       email: 'info@petrescue.org'
     },
     invoice_file: 'charlie_invoice.pdf',
-    pet_photo: 'charlie.jpg',
-    pet_story: 'Charlie is a 4-year-old labrador retriever who was hit by a car and needs X-rays and wound treatment to recover.',
+    pet_photo: 'https://images.unsplash.com/photo-1692713456114-798f4e1ba740?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsYWJyYWRvciUyMHJldHJpZXZlciUyMGRvZ3xlbnwxfHx8fDE3NzA3MTExODN8MA&ixlib=rb-4.1.0&q=80&w=1080',
+    pet_story: 'Charlie is a 4-year-old labrador retriever who was hit by a car and needs X-rays and wound treatment to recover. Charlie was found injured on the roadside and brought to our emergency clinic. He has multiple wounds that need professional treatment and X-rays to ensure there are no internal injuries.',
     instagram_link: 'https://www.instagram.com/charlie_the_labrador/',
     donations: [
       {
@@ -146,8 +146,8 @@ export const mockInvoices: Invoice[] = [
       email: 'contact@animalcare.org'
     },
     invoice_file: 'bella_invoice.pdf',
-    pet_photo: 'bella.jpg',
-    pet_story: 'Bella is a 2-year-old siamese cat who needs blood work and medication to manage her health condition.',
+    pet_photo: 'https://images.unsplash.com/photo-1768543889439-3e8f39a8b57b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzaWFtZXNlJTIwY2F0JTIwcG9ydHJhaXR8ZW58MXx8fHwxNzcwNjI0MTM3fDA&ixlib=rb-4.1.0&q=80&w=1080',
+    pet_story: 'Bella is a 2-year-old siamese cat who needs blood work and medication to manage her health condition. She was brought to us showing signs of illness and lethargy. Our veterinarians need to run comprehensive blood tests to diagnose her condition and provide the necessary medication.',
     instagram_link: 'https://www.instagram.com/bella_the_siamese/',
     donations: [
       {
@@ -177,8 +177,8 @@ export const mockInvoices: Invoice[] = [
       phone: '(555) 123-4567'
     },
     invoice_file: 'rocky_invoice.pdf',
-    pet_photo: 'rocky.jpg',
-    pet_story: 'Rocky is a 6-year-old golden retriever who needs spay/neuter surgery to improve his health and prevent future litters.',
+    pet_photo: 'https://images.unsplash.com/photo-1615233500064-caa995e2f9dd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxnb2xkZW4lMjByZXRyaWV2ZXIlMjBwdXBweXxlbnwxfHx8fDE3NzA3MTE3Nzh8MA&ixlib=rb-4.1.0&q=80&w=1080',
+    pet_story: 'Rocky is a 6-month-old golden retriever puppy who needs spay/neuter surgery to improve his health and prevent future litters. This procedure is essential for Rocky\'s long-term health and will help control the pet population in our community.',
     instagram_link: 'https://www.instagram.com/rocky_the_golden/',
     donations: [
       {
@@ -203,9 +203,9 @@ export const mockInvoices: Invoice[] = [
       email: 'help@strayanimalrescue.org'
     },
     invoice_file: 'whiskers_invoice.pdf',
-    pet_photo: 'whiskers.jpg',
-    pet_story: 'Whiskers is a 1-year-old siamese cat who has an eye infection that needs treatment to prevent further complications.',
-    instagram_link: 'https://www.instagram.com/whiskers_the_siamese/',
+    pet_photo: 'https://images.unsplash.com/photo-1659432608171-9da638665a11?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxncmF5JTIwY2F0JTIwcG9ydHJhaXR8ZW58MXx8fHwxNzcwNjY2MjQyfDA&ixlib=rb-4.1.0&q=80&w=1080',
+    pet_story: 'Whiskers is a 1-year-old gray cat who has an eye infection that needs treatment to prevent further complications. He was found as a stray with a severe eye infection that has worsened over time. Without treatment, Whiskers could lose his sight permanently.',
+    instagram_link: 'https://www.instagram.com/whiskers_the_gray/',
     donations: [
       {
         id: '10',

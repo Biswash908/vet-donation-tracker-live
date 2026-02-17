@@ -1,60 +1,147 @@
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
-import { Upload } from 'lucide-react';
+import { ArrowLeft, Upload } from 'lucide-react';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
+import { createInvoice, uploadFileToStorage } from '../lib/supabase';
 
-export default function AddNewCase() {
+interface AddNewCaseProps {
+  onBack: () => void;
+}
+
+export default function AddNewCase({ onBack }: AddNewCaseProps) {
   const [newCase, setNewCase] = useState({
     animal_name: '',
-    animal_type: '',
     medical_condition: '',
     estimated_cost: '',
     payment_link: '',
-    invoice_file: '',
     pet_photo: '',
     pet_story: '',
     instagram_link: ''
   });
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [invoiceFile, setInvoiceFile] = useState<File | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handlePublish = () => {
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setPhotoFile(file);
+      console.log('[v0] Photo selected:', file.name);
+    }
+  };
+
+  const handleInvoiceUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setInvoiceFile(file);
+      console.log('[v0] Invoice selected:', file.name);
+    }
+  };
+
+  const handlePublish = async () => {
     if (!newCase.animal_name || !newCase.medical_condition || !newCase.estimated_cost || !newCase.payment_link) {
       alert('Please fill in all required fields');
       return;
     }
 
-    console.log('Publishing case:', newCase);
-    alert('Case published successfully!');
-    
-    // Reset form
-    setNewCase({
-      animal_name: '',
-      animal_type: '',
-      medical_condition: '',
-      estimated_cost: '',
-      payment_link: '',
-      invoice_file: '',
-      pet_photo: '',
-      pet_story: '',
-      instagram_link: ''
-    });
+    if (!photoFile) {
+      alert('Please upload a photo of the pet');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      let photoUrl: string | null = null;
+      let invoiceUrl: string | null = null;
+
+      // Upload photo to Supabase Storage
+      if (photoFile) {
+        const timestamp = Date.now();
+        const photoPath = `pet-photos/${timestamp}-${photoFile.name}`;
+        photoUrl = await uploadFileToStorage(photoFile, 'pet-images', photoPath);
+        
+        if (!photoUrl) {
+          alert('Failed to upload photo. Please try again.');
+          setIsLoading(false);
+          return;
+        }
+      }
+
+      // Upload invoice file to Supabase Storage if provided
+      if (invoiceFile) {
+        const timestamp = Date.now();
+        const invoicePath = `invoices/${timestamp}-${invoiceFile.name}`;
+        invoiceUrl = await uploadFileToStorage(invoiceFile, 'pet-invoices', invoicePath);
+      }
+
+      const invoiceData = {
+        animal_name: newCase.animal_name,
+        animal_type: 'Unknown',
+        medical_condition: newCase.medical_condition,
+        estimated_cost: parseFloat(newCase.estimated_cost),
+        payment_link: newCase.payment_link,
+        pet_photo: photoUrl,
+        pet_story: newCase.pet_story || null,
+        instagram_link: newCase.instagram_link || null,
+        invoice_file: invoiceUrl || null,
+        status: 'pending' as const
+      };
+
+      await createInvoice(invoiceData);
+      alert('Case published successfully!');
+      
+      // Reset form
+      setNewCase({
+        animal_name: '',
+        medical_condition: '',
+        estimated_cost: '',
+        payment_link: '',
+        pet_photo: '',
+        pet_story: '',
+        instagram_link: ''
+      });
+      setPhotoFile(null);
+      setInvoiceFile(null);
+      
+      onBack();
+    } catch (error) {
+      console.error('Error publishing case:', error);
+      alert('Failed to publish case. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
       {/* Header */}
-      <div className="bg-white border-b border-slate-200 shadow-sm">
-        <div className="container mx-auto px-4 py-6">
-          <div>
-            <h1 className="text-3xl text-slate-900">VET DONATION TRACKER</h1>
-            <p className="text-sm text-slate-600 mt-1">Admin Dashboard</p>
+      <header className="bg-white border-b border-[#e2e8f0] shadow-sm">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-start h-16 sm:h-20 gap-4">
+            <Button 
+              onClick={onBack}
+              variant="ghost"
+              size="sm"
+              className="gap-2 text-[#0a0a0a] hover:bg-slate-100"
+            >
+              <ArrowLeft className="size-4" />
+              Back
+            </Button>
+            <div className="border-l border-[#e2e8f0] h-8 hidden sm:block" />
+            <div className="hidden sm:block">
+              <h1 className="text-xl sm:text-2xl text-[#0a0a0a] font-normal">
+                JLT Cat Lovers' Group
+              </h1>
+              <p className="text-sm text-[#717182]">Add New Case</p>
+            </div>
           </div>
         </div>
-      </div>
+      </header>
 
-      <div className="container mx-auto px-4 py-8 max-w-3xl">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-3xl">
         <Card className="bg-white">
           <CardHeader>
             <CardTitle className="text-2xl">Add New Case</CardTitle>
@@ -71,17 +158,7 @@ export default function AddNewCase() {
                   onChange={(e) => setNewCase({ ...newCase, animal_name: e.target.value })}
                 />
               </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="pet-type">Pet Type</Label>
-                <Input
-                  id="pet-type"
-                  placeholder="e.g., Dog"
-                  value={newCase.animal_type}
-                  onChange={(e) => setNewCase({ ...newCase, animal_type: e.target.value })}
-                />
-              </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="treatment">Treatment Description *</Label>
                 <Textarea
@@ -116,32 +193,24 @@ export default function AddNewCase() {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="invoice-file">Invoice Upload (PDF/Image)</Label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    id="invoice-file"
-                    placeholder="invoice.pdf"
-                    value={newCase.invoice_file}
-                    onChange={(e) => setNewCase({ ...newCase, invoice_file: e.target.value })}
+                <Label htmlFor="photo-upload">Pet Photo *</Label>
+                <div className="relative">
+                  <input
+                    id="photo-upload"
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePhotoUpload}
+                    className="hidden"
                   />
-                  <Button variant="outline" size="sm">
-                    <Upload className="size-4" />
-                  </Button>
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="pet-photo">Pet Photo</Label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    id="pet-photo"
-                    placeholder="pet.jpg"
-                    value={newCase.pet_photo}
-                    onChange={(e) => setNewCase({ ...newCase, pet_photo: e.target.value })}
-                  />
-                  <Button variant="outline" size="sm">
-                    <Upload className="size-4" />
-                  </Button>
+                  <label 
+                    htmlFor="photo-upload"
+                    className="flex items-center justify-center gap-2 w-full p-4 border-2 border-dashed border-blue-300 rounded-lg cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors"
+                  >
+                    <Upload className="size-5 text-blue-600" />
+                    <span className="text-blue-600">
+                      {photoFile ? photoFile.name : 'Click to upload pet photo'}
+                    </span>
+                  </label>
                 </div>
               </div>
               
@@ -157,6 +226,28 @@ export default function AddNewCase() {
               </div>
               
               <div className="space-y-2">
+                <Label htmlFor="invoice-upload">Invoice/Receipt (Optional)</Label>
+                <div className="relative">
+                  <input
+                    id="invoice-upload"
+                    type="file"
+                    accept="application/pdf,image/*"
+                    onChange={handleInvoiceUpload}
+                    className="hidden"
+                  />
+                  <label 
+                    htmlFor="invoice-upload"
+                    className="flex items-center justify-center gap-2 w-full p-4 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-gray-400 hover:bg-gray-50 transition-colors"
+                  >
+                    <Upload className="size-5 text-gray-600" />
+                    <span className="text-gray-600">
+                      {invoiceFile ? invoiceFile.name : 'Click to upload invoice (PDF/Image)'}
+                    </span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="instagram">Social Media Link</Label>
                 <Input
                   id="instagram"
@@ -167,11 +258,12 @@ export default function AddNewCase() {
               </div>
 
               <div className="flex justify-end gap-3 pt-4">
-                <Button variant="outline">
+                <Button variant="outline" onClick={onBack} disabled={isLoading}>
+                  <ArrowLeft className="size-4" />
                   Cancel
                 </Button>
-                <Button onClick={handlePublish} className="bg-blue-600 hover:bg-blue-700">
-                  Publish Case
+                <Button onClick={handlePublish} className="bg-blue-600 hover:bg-blue-700" disabled={isLoading}>
+                  {isLoading ? 'Publishing...' : 'Publish Case'}
                 </Button>
               </div>
             </div>

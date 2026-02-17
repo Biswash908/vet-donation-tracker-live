@@ -1,4 +1,5 @@
-import { defineConfig } from 'vite';
+
+  import { defineConfig } from 'vite';
   import react from '@vitejs/plugin-react-swc';
   import path from 'path';
 
@@ -16,6 +17,18 @@ import { defineConfig } from 'vite';
         'next-themes@0.4.6': 'next-themes',
         'lucide-react@0.487.0': 'lucide-react',
         'input-otp@1.4.2': 'input-otp',
+        'figma:asset/ff150c611d9a0a44691c841559000454d9e73a33.png': path.resolve(__dirname, './src/assets/ff150c611d9a0a44691c841559000454d9e73a33.png'),
+        'figma:asset/d74657f94f602c0ffcab4f04bd170597cc2886a8.png': path.resolve(__dirname, './src/assets/d74657f94f602c0ffcab4f04bd170597cc2886a8.png'),
+        'figma:asset/d6cb36d89037e114add4cf42dd98ff4bd6102c58.png': path.resolve(__dirname, './src/assets/d6cb36d89037e114add4cf42dd98ff4bd6102c58.png'),
+        'figma:asset/cb90ebf16137faeea64bc40efec09be57fbc3288.png': path.resolve(__dirname, './src/assets/cb90ebf16137faeea64bc40efec09be57fbc3288.png'),
+        'figma:asset/b4a55c973480bac20512ec670e241fa901418ae9.png': path.resolve(__dirname, './src/assets/b4a55c973480bac20512ec670e241fa901418ae9.png'),
+        'figma:asset/a7f63b0fded1c1ba81b56dc009eb6c021dafbc3b.png': path.resolve(__dirname, './src/assets/a7f63b0fded1c1ba81b56dc009eb6c021dafbc3b.png'),
+        'figma:asset/a7e1f86efc53d54ee04b02f56d95f19bb073af41.png': path.resolve(__dirname, './src/assets/a7e1f86efc53d54ee04b02f56d95f19bb073af41.png'),
+        'figma:asset/9e94b57949fc4b425b02d2f0c43b5b61caa05408.png': path.resolve(__dirname, './src/assets/9e94b57949fc4b425b02d2f0c43b5b61caa05408.png'),
+        'figma:asset/6edb21adb41dabbf3440024eb7841d26f07f69b5.png': path.resolve(__dirname, './src/assets/6edb21adb41dabbf3440024eb7841d26f07f69b5.png'),
+        'figma:asset/6d071c39be4e1af2f4ea0f667d4b0fd8842dcbc2.png': path.resolve(__dirname, './src/assets/6d071c39be4e1af2f4ea0f667d4b0fd8842dcbc2.png'),
+        'figma:asset/3eedf5cc5cc4e630ad81b7e6d9a4704d8445ce76.png': path.resolve(__dirname, './src/assets/3eedf5cc5cc4e630ad81b7e6d9a4704d8445ce76.png'),
+        'figma:asset/20333af9ce4658a26adec42ea51f2092bae28481.png': path.resolve(__dirname, './src/assets/20333af9ce4658a26adec42ea51f2092bae28481.png'),
         'embla-carousel-react@8.6.0': 'embla-carousel-react',
         'cmdk@1.1.1': 'cmdk',
         'class-variance-authority@0.7.1': 'class-variance-authority',
@@ -54,6 +67,6 @@ import { defineConfig } from 'vite';
     },
     server: {
       port: 3000,
-      open: true,
+      open: false,
     },
   });

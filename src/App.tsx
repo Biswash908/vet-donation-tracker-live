@@ -1,83 +1,80 @@
-'use client';
-
 import { useState, useEffect } from 'react';
-import Homepage from './components/Homepage';
+import Home from './components/Home';
+import PetDetail from './components/PetDetail';
+import AddNewCase from './components/AddNewCase';
 import AdminDashboard from './components/AdminDashboard';
-import AdminLogin from './components/AdminLogin';
-import { isAdminLoggedIn } from './lib/auth';
-
-type Page = 'home' | 'admin-login' | 'admin-dashboard';
+import EditCase from './components/EditCase';
+import { fetchInvoices, Invoice } from './lib/supabase';
 
 export default function App() {
-  const [currentPage, setCurrentPage] = useState<Page>('home');
-  const [keySequence, setKeySequence] = useState('');
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [selectedPetId, setSelectedPetId] = useState<string | null>(null);
+  const [currentView, setCurrentView] = useState<'home' | 'admin-dashboard' | 'admin-add-case' | 'admin-edit-case'>('home');
+  const [editingPetId, setEditingPetId] = useState<string | null>(null);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  // Check if admin is already logged in
   useEffect(() => {
-    setIsLoggedIn(isAdminLoggedIn());
-  }, []);
-
-  // Keyboard shortcut to access admin
-  useEffect(() => {
-    const handleKeyPress = (e: KeyboardEvent) => {
-      // Update key sequence
-      setKeySequence((prev) => {
-        const newSequence = (prev + e.key).slice(-5); // Keep last 5 characters
-        
-        // Check if user typed "admin"
-        if (newSequence === 'admin') {
-          setCurrentPage(isLoggedIn ? 'admin-dashboard' : 'admin-login');
-          return '';
-        }
-        
-        return newSequence;
-      });
-    };
-
-    // Alternative: Ctrl/Cmd + Shift + A shortcut
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'A') {
-        e.preventDefault();
-        if (currentPage === 'home') {
-          setCurrentPage(isLoggedIn ? 'admin-dashboard' : 'admin-login');
-        } else {
-          setCurrentPage('home');
-        }
+    const loadInvoices = async () => {
+      try {
+        const data = await fetchInvoices();
+        setInvoices(data);
+      } catch (error) {
+        console.error('Failed to load invoices:', error);
       }
     };
 
-    window.addEventListener('keypress', handleKeyPress);
-    window.addEventListener('keydown', handleKeyDown);
+    loadInvoices();
+  }, [refreshKey]);
 
-    return () => {
-      window.removeEventListener('keypress', handleKeyPress);
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [isLoggedIn, currentPage]);
+  const selectedPet = selectedPetId 
+    ? invoices.find(pet => pet.id === selectedPetId) 
+    : null;
 
-  const handleAdminLogin = () => {
-    setIsLoggedIn(true);
-    setCurrentPage('admin-dashboard');
+  const handleRefresh = () => {
+    setRefreshKey(prev => prev + 1);
   };
 
-  const handleAdminLogout = () => {
-    setIsLoggedIn(false);
-    setCurrentPage('home');
-  };
+  if (currentView === 'admin-dashboard') {
+    return (
+      <AdminDashboard 
+        onBack={() => setCurrentView('home')} 
+        onAddNewCase={() => setCurrentView('admin-add-case')}
+        onEditCase={(petId) => {
+          setEditingPetId(petId);
+          setCurrentView('admin-edit-case');
+        }}
+      />
+    );
+  }
 
-  return (
-    <div className="min-h-screen">
-      {currentPage === 'home' && <Homepage />}
-      {currentPage === 'admin-login' && (
-        <AdminLogin
-          onLogin={handleAdminLogin}
-          navigateTo={(page) => setCurrentPage(page)}
-        />
-      )}
-      {currentPage === 'admin-dashboard' && (
-        <AdminDashboard onBackToPublic={handleAdminLogout} />
-      )}
-    </div>
-  );
+  if (currentView === 'admin-add-case') {
+    return <AddNewCase onBack={() => {
+      setCurrentView('admin-dashboard');
+      handleRefresh();
+    }} />;
+  }
+
+  if (currentView === 'admin-edit-case' && editingPetId) {
+    return (
+      <EditCase 
+        petId={editingPetId} 
+        onBack={() => {
+          setEditingPetId(null);
+          setCurrentView('admin-dashboard');
+          handleRefresh();
+        }}
+      />
+    );
+  }
+
+  if (selectedPet) {
+    return (
+      <PetDetail 
+        pet={selectedPet} 
+        onBack={() => setSelectedPetId(null)} 
+      />
+    );
+  }
+
+  return <Home onSelectPet={(id) => setSelectedPetId(id)} onAdminClick={() => setCurrentView('admin-dashboard')} />;
 }

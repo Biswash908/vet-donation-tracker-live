@@ -1,360 +1,262 @@
-'use client';
-
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { Case, Donation } from '../lib/database';
+import { ArrowLeft, FileText, Heart, Instagram, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from './ui/button';
-import { Badge } from './ui/badge';
-import { Heart, ArrowLeft, Phone, Mail, ExternalLink, Instagram } from 'lucide-react';
+import { useState } from 'react';
+import type { Invoice } from '../lib/supabase';
 
 interface PetDetailProps {
-  pet: Case;
-  donations: Donation[];
+  pet: Invoice;
   onBack: () => void;
 }
 
-export default function PetDetail({ pet, donations, onBack }: PetDetailProps) {
-  const totalDonated = donations.reduce((sum, d) => sum + d.amount, 0);
-  const remaining = pet.estimated_cost - totalDonated;
-  const progressPercentage = Math.round((totalDonated / pet.estimated_cost) * 100);
+export default function PetDetail({ pet, onBack }: PetDetailProps) {
+  const [invoicesOpen, setInvoicesOpen] = useState(false);
+  const totalDonated = (pet.donations || []).reduce((sum, d) => sum + d.amount, 0);
+  const progressPercentage = Math.round((totalDonated / pet.estimated_cost) *100);
+  const stillNeeded = pet.estimated_cost - totalDonated;
+  const isFunded = totalDonated >= pet.estimated_cost;
 
-  const getStatusColor = (status: string) => {
-    const colors: Record<string, string> = {
-      pending: 'bg-yellow-100 text-yellow-800',
-      active: 'bg-slate-100 text-slate-800',
-      partially_funded: 'bg-blue-100 text-blue-800',
-      funded: 'bg-green-100 text-green-800',
-      closed: 'bg-slate-100 text-slate-800'
-    };
-    return colors[status] || colors.active;
-  };
-
-  const handleDonate = () => {
-    if (pet.payment_link) {
-      window.open(pet.payment_link, '_blank');
-    } else {
-      alert('Payment link not available for this case');
-    }
+  // Format date
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
+    <div className="min-h-screen bg-gradient-to-b from-[#eff6ff] to-white">
       {/* Header */}
-      <div className="bg-white border-b border-slate-200 shadow-sm">
-        <div className="container mx-auto px-4 py-4 sm:py-6">
-          <div className="flex items-center gap-2 sm:gap-4">
-            <Button
-              variant="outline"
-              size="sm"
+      <header className="bg-white border-b border-[#e2e8f0] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)]">
+        <div className="px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center gap-4 h-16 sm:h-20">
+            <Button 
               onClick={onBack}
-              className="flex items-center gap-2 bg-transparent"
+              variant="ghost"
+              size="sm"
+              className="gap-2 text-[#0a0a0a] hover:bg-slate-100"
             >
               <ArrowLeft className="size-4" />
-              <span className="hidden sm:inline">Back</span>
+              Back
             </Button>
+            
             <div className="flex-1">
-              <h1 className="text-2xl sm:text-3xl text-slate-900">VET DONATION TRACKER</h1>
-              <p className="text-xs sm:text-sm text-slate-600 mt-1">Pet Details</p>
+              <h1 className="text-[18px] sm:text-[20px] text-[#0f172b] leading-6">
+                JLT Cat Lovers' Group
+              </h1>
+              <p className="text-xs text-[#45556c]">Pet Details</p>
             </div>
           </div>
         </div>
-      </div>
+      </header>
 
-      {/* Mobile Layout - GoFundMe Style */}
-      <div className="lg:hidden">
-        {/* Pet Photo */}
-        {pet.pet_photo && (
-          <div className="w-full">
-            <img
-              src={pet.pet_photo || "/placeholder.svg"}
-              alt={pet.animal_name}
-              className="w-full h-80 object-cover"
-            />
-          </div>
-        )}
-
-        <div className="px-6 py-6 space-y-6">
-          {/* Title and Badge */}
-          <div>
-            <div className="flex justify-between items-start mb-2">
-              <h1 className="text-2xl text-slate-900">{pet.animal_name}</h1>
-              <Badge variant="outline" className={getStatusColor(pet.status)}>
-                {pet.status.replace('_', ' ')}
-              </Badge>
-            </div>
-          </div>
-
-          {/* Simple Progress Bar - GoFundMe Style */}
-          <div className="bg-white p-4 rounded-lg border border-slate-200">
-            <div className="mb-4">
-              <div className="text-3xl text-slate-900 mb-1">
-                ${totalDonated.toFixed(2)}
+      {/* Main Content */}
+      <main className="px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-12 max-w-[1536px] mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6 sm:gap-8">
+          {/* Left Column */}
+          <div className="space-y-6">
+            {/* Pet Header Card */}
+            <div className="bg-white border border-[#e2e8f0] rounded-[10px] p-6 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)]">
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <h2 className="text-[30px] text-[#0a0a0a] leading-9 mb-1">
+                    {pet.animal_name}
+                  </h2>
+                  <p className="text-sm text-[#717182]">Dog</p>
+                </div>
+                <div className={`px-2.5 py-0.5 rounded-lg border border-[rgba(0,0,0,0.1)] text-xs leading-4 ${
+                  isFunded 
+                    ? 'bg-[#dcfce7] text-[#016630]' 
+                    : 'bg-[#dbeafe] text-[#193cb8]'
+                }`}>
+                  {isFunded ? 'funded' : 'partially funded'}
+                </div>
               </div>
-              <div className="text-sm text-slate-600">
-                raised of ${pet.estimated_cost.toFixed(2)} goal
-              </div>
+
+              {/* Pet Image */}
+              {pet.pet_photo && (
+                <div className="rounded-[10px] overflow-hidden">
+                  <img 
+                    src={pet.pet_photo} 
+                    alt={pet.animal_name}
+                    className="w-full h-[250px] sm:h-[300px] lg:h-[400px] object-cover"
+                  />
+                </div>
+              )}
+              {!pet.pet_photo && (
+                <div className="rounded-[10px] overflow-hidden bg-[#f0f0f0] h-[250px] sm:h-[300px] lg:h-[400px] flex items-center justify-center">
+                  <p className="text-[#45556c]">No photo available</p>
+                </div>
+              )}
             </div>
 
-            {/* Progress Bar */}
-            <div className="w-full bg-slate-200 rounded-full h-2 mb-4">
-              <div
-                className="bg-green-600 h-2 rounded-full transition-all"
-                style={{ width: `${Math.min(progressPercentage, 100)}%` }}
-              />
+            {/* Medical Condition */}
+            <div className="bg-white border border-[#e2e8f0] rounded-[10px] p-6 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)]">
+              <h3 className="text-[20px] font-medium text-[#0f172b] mb-3 leading-7">
+                Medical Condition
+              </h3>
+              <p className="text-[15px] text-[#45556c] leading-6">
+                {pet.medical_condition}
+              </p>
             </div>
 
-            {/* Donate Button */}
-            <Button
-              onClick={handleDonate}
-              className="w-full bg-blue-600 hover:bg-blue-700 py-6 text-lg flex items-center justify-center gap-2"
-            >
-              <Heart className="size-5" />
-              Donate Now
-            </Button>
-          </div>
-
-          {/* Medical Condition */}
-          <div className="bg-white p-6 rounded-lg border border-slate-200">
-            <h2 className="text-xl mb-3 text-slate-900">Medical Condition</h2>
-            <p className="text-slate-700 leading-relaxed">{pet.medical_condition}</p>
-          </div>
-
-          {/* Pet Story */}
-          {pet.pet_story && (
-            <div className="bg-white p-6 rounded-lg border border-slate-200">
-              <h2 className="text-xl mb-3 text-slate-900">Story</h2>
-              <p className="text-slate-700 leading-relaxed whitespace-pre-line">
+            {/* Pet's Story */}
+            <div className="bg-white border border-[#e2e8f0] rounded-[10px] p-6 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)]">
+              <h3 className="text-[20px] font-medium text-[#0f172b] mb-3 leading-7">
+                Pet's Story
+              </h3>
+              <p className="text-[15px] text-[#45556c] leading-6 whitespace-pre-wrap">
                 {pet.pet_story}
               </p>
             </div>
-          )}
 
-          {/* Invoice Information */}
-          {pet.invoice_file && (
-            <div className="bg-white p-6 rounded-lg border border-slate-200">
-              <h2 className="text-xl mb-3 text-slate-900">Veterinary Invoice</h2>
-              <Button
-                variant="outline"
-                className="flex items-center gap-2 bg-transparent"
-                onClick={() => window.open(pet.invoice_file, '_blank')}
-              >
-                <ExternalLink className="size-4" />
-                View Invoice Document
-              </Button>
-            </div>
-          )}
+            {/* Recent Donations */}
+            <div className="bg-white border border-[#e2e8f0] rounded-[10px] p-6 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)]">
+              <h3 className="text-[20px] font-medium text-[#0f172b] mb-1 leading-7">
+                Recent Donations
+              </h3>
+              <p className="text-sm text-[#45556c] mb-6">
+                {(pet.donations || []).length} generous {(pet.donations || []).length === 1 ? 'donor' : 'donors'}
+              </p>
 
-          {/* Recent Donations */}
-          {donations.length > 0 && (
-            <div className="bg-white p-6 rounded-lg border border-slate-200">
-              <h2 className="text-xl mb-3 text-slate-900">Donations</h2>
-              <p className="text-sm text-slate-600 mb-4">{donations.length} donations</p>
               <div className="space-y-3">
-                {donations
-                  .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-                  .map((donation) => (
-                    <div
-                      key={donation.id}
-                      className="flex justify-between items-center py-3 border-b border-slate-100 last:border-0"
-                    >
+                {(pet.donations || []).map((donation) => (
+                  <div 
+                    key={donation.id}
+                    className="bg-[#f8fafc] border border-[#e2e8f0] rounded-lg p-4"
+                  >
+                    <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-semibold text-slate-900">
+                        <p className="text-[15px] text-[#0f172b] font-medium">
                           {donation.donor_name || 'Anonymous'}
                         </p>
-                        <p className="text-sm text-slate-600">
-                          {new Date(donation.created_at).toLocaleDateString('en-US', {
-                            month: 'short',
-                            day: 'numeric'
-                          })}
+                        <p className="text-sm text-[#45556c]">
+                          {formatDate(donation.created_at)}
                         </p>
                       </div>
-                      <span className="text-lg text-slate-900 font-semibold">
-                        ${donation.amount.toFixed(2)}
-                      </span>
+                      <p className="text-[17px] font-semibold text-[#16a34a]">
+                        ${donation.amount.toLocaleString()}
+                      </p>
                     </div>
-                  ))}
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Desktop Layout - Original Two Column */}
-      <div className="hidden lg:block">
-        <div className="container mx-auto px-4 py-8">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Main Content - Appears first on mobile */}
-            <div className="lg:col-span-2 space-y-6">
-              {/* Pet Header Card */}
-              <Card className="bg-white">
-                <CardHeader>
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <CardTitle className="text-3xl mb-2">{pet.animal_name}</CardTitle>
-                    </div>
-                    <Badge variant="outline" className={getStatusColor(pet.status)}>
-                      {pet.status.replace('_', ' ')}
-                    </Badge>
                   </div>
-
-                  {/* Pet Photo */}
-                  {pet.pet_photo && (
-                    <div className="rounded-lg overflow-hidden mb-4">
-                      <img
-                        src={pet.pet_photo || "/placeholder.svg"}
-                        alt={pet.animal_name}
-                        className="w-full h-96 object-cover"
-                      />
-                    </div>
-                  )}
-                </CardHeader>
-              </Card>
-
-              {/* Medical Condition */}
-              <Card className="bg-white">
-                <CardHeader>
-                  <CardTitle>Medical Condition</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-slate-700 leading-relaxed">{pet.medical_condition}</p>
-                </CardContent>
-              </Card>
-
-              {/* Pet Story */}
-              {pet.pet_story && (
-                <Card className="bg-white">
-                  <CardHeader>
-                    <CardTitle>Pet's Story</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-slate-700 leading-relaxed whitespace-pre-line">
-                      {pet.pet_story}
-                    </p>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Invoice Information */}
-              {pet.invoice_file && (
-                <Card className="bg-white">
-                  <CardHeader>
-                    <CardTitle>Veterinary Invoice</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <Button
-                      variant="outline"
-                      className="flex items-center gap-2 bg-transparent"
-                      onClick={() => window.open(pet.invoice_file, '_blank')}
-                    >
-                      <ExternalLink className="size-4" />
-                      View Invoice Document
-                    </Button>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Recent Donations */}
-              {donations.length > 0 && (
-                <Card className="bg-white">
-                  <CardHeader>
-                    <CardTitle>Recent Donations</CardTitle>
-                    <CardDescription>{donations.length} generous donors</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {donations
-                        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-                        .map((donation) => (
-                          <div
-                            key={donation.id}
-                            className="flex justify-between items-center p-4 bg-slate-50 rounded-lg"
-                          >
-                            <div>
-                              <p className="font-semibold text-slate-900">
-                                {donation.donor_name || 'Anonymous Donor'}
-                              </p>
-                              <p className="text-sm text-slate-600">
-                                {new Date(donation.created_at).toLocaleDateString('en-US', {
-                                  year: 'numeric',
-                                  month: 'long',
-                                  day: 'numeric'
-                                })}
-                              </p>
-                            </div>
-                            <span className="text-xl text-green-700 font-semibold">
-                              ${donation.amount.toFixed(2)}
-                            </span>
-                          </div>
-                        ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-
-            {/* Sidebar - Appears after main content on mobile */}
-            <div className="lg:col-start-3 space-y-6">
-              <div className="lg:sticky lg:top-6 space-y-6">
-                {/* Funding Progress */}
-                <Card className="bg-white border-blue-200">
-                  <CardHeader>
-                    <CardTitle>Funding Progress</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    {/* Progress Bar */}
-                    <div>
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="text-sm text-slate-600">Progress</span>
-                        <span className="text-sm text-slate-900">{progressPercentage}%</span>
-                      </div>
-                      <div className="w-full bg-slate-200 rounded-full h-3 mb-2">
-                        <div
-                          className="bg-blue-600 h-3 rounded-full transition-all"
-                          style={{ width: `${Math.min(progressPercentage, 100)}%` }}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Amounts */}
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-slate-600">Total Needed</span>
-                        <span className="text-xl text-slate-900">
-                          ${pet.estimated_cost.toFixed(2)}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-slate-600">Raised So Far</span>
-                        <span className="text-xl text-green-700">
-                          ${totalDonated.toFixed(2)}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center pt-3 border-t border-slate-200">
-                        <span className="text-sm text-slate-600">Still Needed</span>
-                        <span className="text-2xl text-blue-700 font-semibold">
-                          ${remaining.toFixed(2)}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Donate Button */}
-                    <Button
-                      onClick={handleDonate}
-                      className="w-full bg-blue-600 hover:bg-blue-700 py-6 text-lg flex items-center justify-center gap-2"
-                    >
-                      <Heart className="size-5" />
-                      Donate Now
-                    </Button>
-
-                    <p className="text-xs text-center text-slate-600">
-                      You'll be redirected to the veterinary clinic's secure payment page
-                    </p>
-                  </CardContent>
-                </Card>
+                ))}
               </div>
             </div>
           </div>
+
+          {/* Right Column - Sidebar */}
+          <div className="space-y-6">
+            {/* Funding Progress */}
+            <div className="bg-white border border-[#e2e8f0] rounded-[10px] p-6 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)]">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-[17px] font-medium text-[#0f172b]">
+                  Funding Progress
+                </h3>
+                
+                {/* Invoice Dropdown Toggle */}
+                <button
+                  onClick={() => setInvoicesOpen(!invoicesOpen)}
+                  className="flex items-center gap-1 text-[#155dfc] hover:text-[#1447e6] transition-colors"
+                >
+                  <FileText className="size-4" />
+                  <span className="text-sm font-medium">Invoice</span>
+                  {invoicesOpen ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
+                </button>
+              </div>
+
+              {/* Invoice Dropdown */}
+              {invoicesOpen && pet.invoice_file && (
+                <div className="mb-6 bg-[#f8fafc] border border-[#e2e8f0] rounded-lg p-4">
+                  <h4 className="text-sm font-medium text-[#0f172b] mb-3">Uploaded Invoices</h4>
+                  <div className="space-y-2">
+                    <button 
+                      onClick={() => {
+                        if (pet.invoice_file) {
+                          const link = document.createElement('a');
+                          link.href = pet.invoice_file;
+                          link.download = `${pet.animal_name}-invoice.pdf`;
+                          document.body.appendChild(link);
+                          link.click();
+                          document.body.removeChild(link);
+                        }
+                      }}
+                      className="flex items-center gap-2 text-sm text-[#155dfc] hover:underline w-full text-left"
+                    >
+                      <FileText className="size-4 flex-shrink-0" />
+                      <span className="truncate">{pet.animal_name} Invoice</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Progress Info */}
+              <div className="mb-3">
+                <div className="flex justify-between items-baseline mb-1">
+                  <span className="text-sm text-[#45556c]">Progress</span>
+                  <span className="text-lg font-semibold text-[#0f172b]">{progressPercentage}%</span>
+                </div>
+                
+                {/* Progress Bar */}
+                <div className="w-full bg-[#e2e8f0] rounded-full h-3 mb-4">
+                  <div
+                    className="bg-[#155dfc] h-3 rounded-full transition-all"
+                    style={{ width: `${Math.min(progressPercentage, 100)}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Funding Details */}
+              <div className="space-y-3 mb-6">
+                <div className="flex justify-between items-center">
+                  <span className="text-[15px] text-[#45556c]">Total Needed</span>
+                  <span className="text-[17px] font-semibold text-[#0f172b]">
+                    ${pet.estimated_cost.toFixed(2)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-[15px] text-[#45556c]">Raised So Far</span>
+                  <span className="text-[17px] font-semibold text-[#16a34a]">
+                    ${totalDonated.toFixed(2)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center pt-3 border-t border-[#e2e8f0]">
+                  <span className="text-[15px] font-medium text-[#0f172b]">Still Needed</span>
+                  <span className="text-[20px] font-bold text-[#155dfc]">
+                    ${stillNeeded > 0 ? stillNeeded.toFixed(2) : '0.00'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Donate Button */}
+              <Button 
+                className="w-full bg-[#155dfc] hover:bg-[#1447e6] text-white h-12 text-base gap-2"
+                onClick={() => window.open(pet.payment_link, '_blank')}
+              >
+                <Heart className="size-5" />
+                Donate Now
+              </Button>
+              
+              <p className="text-xs text-center text-[#64748b] mt-3">
+                You'll be redirected to the veterinary clinic's secure payment page
+              </p>
+            </div>
+
+            {/* Follow Journey */}
+            {pet.instagram_link && (
+              <div className="bg-white border border-[#e2e8f0] rounded-[10px] p-6 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)]">
+                <h3 className="text-[17px] font-medium text-[#0f172b] mb-4">
+                  Follow Our Journey
+                </h3>
+                <Button
+                  variant="outline"
+                  className="w-full gap-2 border-[#e2e8f0]"
+                  onClick={() => window.open(pet.instagram_link, '_blank')}
+                >
+                  <Instagram className="size-4" />
+                  View on Instagram
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }
