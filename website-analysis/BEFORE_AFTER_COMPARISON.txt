@@ -1,0 +1,203 @@
+╔════════════════════════════════════════════════════════════════════════════╗
+║                     DATABASE SCHEMA BEFORE vs AFTER                        ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+
+BEFORE (Current - BROKEN)
+═════════════════════════════════════════════════════════════════════════════
+
+  invoices table:
+  ┌─────────────────────────────────────────────────────────────────────────┐
+  │ Column              │ Type                 │ What It Stores            │
+  ├─────────────────────┼──────────────────────┼───────────────────────────┤
+  │ id                  │ UUID                 │ Unique ID                 │
+  │ animal_name         │ VARCHAR(255)         │ Pet name (e.g., "Whiskers")
+  │ animal_type         │ VARCHAR(100)         │ Type (e.g., "cat")        │
+  │ medical_condition   │ TEXT                 │ Description               │
+  │ estimated_cost      │ DECIMAL(10,2)        │ Amount (e.g., 500.00)     │
+  │ payment_link        │ VARCHAR(500)         │ Stripe link               │
+  │ pet_photo           │ BYTEA         ❌     │ HUGE base64 string (broken!)
+  │ pet_story           │ TEXT                 │ Story text                │
+  │ instagram_link      │ VARCHAR(500)         │ Instagram URL             │
+  │ invoice_file        │ BYTEA         ❌     │ HUGE base64 string (broken!)
+  │ status              │ VARCHAR(50)          │ 'pending', 'funded', etc. │
+  │ created_at          │ TIMESTAMP TZ         │ Creation date             │
+  │ updated_at          │ TIMESTAMP TZ         │ Last update               │
+  └─────────────────────┴──────────────────────┴───────────────────────────┘
+
+  Example data:
+  ┌──────────┬──────────────────────────────────────────────────────────┐
+  │ animal   │ pet_photo                                                │
+  ├──────────┼──────────────────────────────────────────────────────────┤
+  │ Whiskers │ data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/   │
+  │          │ 2wBDAAIBAQEBAQIBAQECAgICAgQDAgICAgUEBAMCBgUGBgMFBgYGBw│
+  │          │ kICAgICAgICBwcJCAgJCAcHBwYKDAkLDA4LDAwLDAsMDAsMBQkLDA│
+  │          │ ... (continues for 100+ lines!)                         │
+  └──────────┴──────────────────────────────────────────────────────────┘
+
+  PROBLEM: 
+  ❌ Stores massive base64 strings (bloats database)
+  ❌ Can't be displayed in HTML
+  ❌ Photos don't show on any page
+  ❌ Inefficient and slow
+
+
+AFTER (Fixed - WORKS!)
+═════════════════════════════════════════════════════════════════════════════
+
+  invoices table:
+  ┌─────────────────────────────────────────────────────────────────────────┐
+  │ Column              │ Type                 │ What It Stores            │
+  ├─────────────────────┼──────────────────────┼───────────────────────────┤
+  │ id                  │ UUID                 │ Unique ID                 │
+  │ animal_name         │ VARCHAR(255)         │ Pet name (e.g., "Whiskers")
+  │ animal_type         │ VARCHAR(100)         │ Type (e.g., "cat")        │
+  │ medical_condition   │ TEXT                 │ Description               │
+  │ estimated_cost      │ DECIMAL(10,2)        │ Amount (e.g., 500.00)     │
+  │ payment_link        │ VARCHAR(500)         │ Stripe link               │
+  │ pet_photo           │ VARCHAR(500)   ✅    │ Supabase Storage URL      │
+  │ pet_story           │ TEXT                 │ Story text                │
+  │ instagram_link      │ VARCHAR(500)         │ Instagram URL             │
+  │ invoice_file        │ VARCHAR(500)   ✅    │ Supabase Storage URL      │
+  │ status              │ VARCHAR(50)          │ 'pending', 'funded', etc. │
+  │ created_at          │ TIMESTAMP TZ         │ Creation date             │
+  │ updated_at          │ TIMESTAMP TZ         │ Last update               │
+  └─────────────────────┴──────────────────────┴───────────────────────────┘
+
+  Example data:
+  ┌──────────┬───────────────────────────────────────────────────────┐
+  │ animal   │ pet_photo                                             │
+  ├──────────┼───────────────────────────────────────────────────────┤
+  │ Whiskers │ https://abc123.supabase.co/storage/v1/object/        │
+  │          │ public/pet-images/1708456789-whiskers.jpg            │
+  │ Fluffy   │ NULL                                                  │
+  │ Shadow   │ https://abc123.supabase.co/storage/v1/object/        │
+  │          │ public/pet-images/1708456790-shadow.png              │
+  └──────────┴───────────────────────────────────────────────────────┘
+
+  BENEFITS:
+  ✅ Stores clean URLs (just 100-200 characters)
+  ✅ Can be displayed in HTML <img src="...">
+  ✅ Photos show on Home page, Pet Details, Admin panel
+  ✅ Professional and scalable
+
+
+═════════════════════════════════════════════════════════════════════════════
+THE CHANGE - ONLY 2 COLUMNS:
+═════════════════════════════════════════════════════════════════════════════
+
+  Column 1: pet_photo
+  ─────────────────────────────────────────────────────────────────────────
+  BEFORE:  BYTEA                (stores huge binary data)
+  AFTER:   VARCHAR(500)         (stores short URL strings)
+  
+  Example BEFORE:
+    data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAIBAQEBAQIBA...
+
+  Example AFTER:
+    https://abc123.supabase.co/storage/v1/object/public/pet-images/photo.jpg
+
+
+  Column 2: invoice_file
+  ─────────────────────────────────────────────────────────────────────────
+  BEFORE:  BYTEA                (stores huge binary data)
+  AFTER:   VARCHAR(500)         (stores short URL strings)
+  
+  Example BEFORE:
+    data:application/pdf;base64,JVBERi0xLjQKJ3F3ZXJ0eXVpb3BhJ...
+
+  Example AFTER:
+    https://abc123.supabase.co/storage/v1/object/public/pet-invoices/invoice.pdf
+
+
+═════════════════════════════════════════════════════════════════════════════
+WHAT GETS DELETED:
+═════════════════════════════════════════════════════════════════════════════
+
+When you run the migration, old BYTEA data will be deleted:
+  ❌ Old base64 pet photos (they were broken anyway)
+  ❌ Old base64 invoice files (they were broken anyway)
+
+This is FINE because:
+  ✅ They weren't working
+  ✅ New uploads will work perfectly
+  ✅ All other data stays intact
+
+
+═════════════════════════════════════════════════════════════════════════════
+HOW TO MIGRATE (Copy & Paste):
+═════════════════════════════════════════════════════════════════════════════
+
+1. Go to Supabase Dashboard
+2. Select your project
+3. Click SQL Editor
+4. Click New Query
+5. Copy & Paste THIS SQL:
+
+   -- Step 1: Drop the old columns with BYTEA data
+   ALTER TABLE invoices 
+   DROP COLUMN IF EXISTS pet_photo CASCADE;
+
+   ALTER TABLE invoices 
+   DROP COLUMN IF EXISTS invoice_file CASCADE;
+
+   -- Step 2: Add new columns with VARCHAR type
+   ALTER TABLE invoices 
+   ADD COLUMN pet_photo VARCHAR(500);
+
+   ALTER TABLE invoices 
+   ADD COLUMN invoice_file VARCHAR(500);
+
+   -- Step 3: Create indexes for performance
+   CREATE INDEX IF NOT EXISTS idx_invoices_pet_photo ON invoices(pet_photo);
+   CREATE INDEX IF NOT EXISTS idx_invoices_invoice_file ON invoices(invoice_file);
+
+6. Click Run button
+7. Wait for success message
+8. Done! ✅
+
+
+═════════════════════════════════════════════════════════════════════════════
+YOUR CODE IS ALREADY UPDATED ✅
+═════════════════════════════════════════════════════════════════════════════
+
+You don't need to change any code. Files updated:
+  ✅ src/lib/supabase.ts (new uploadFileToStorage function)
+  ✅ src/components/AddNewCase.tsx (uses Storage)
+  ✅ src/components/EditCase.tsx (photo upload added)
+
+Everything is ready. Just run the SQL above!
+
+
+═════════════════════════════════════════════════════════════════════════════
+WHAT HAPPENS WHEN YOU UPLOAD A PHOTO:
+═════════════════════════════════════════════════════════════════════════════
+
+BEFORE (Broken):
+  1. User picks file
+  2. App converts to base64 string
+  3. Stores huge string in pet_photo (BYTEA)
+  4. ❌ Photos never display
+
+AFTER (Fixed):
+  1. User picks file
+  2. App uploads to Supabase Storage
+  3. Storage returns URL
+  4. Stores URL in pet_photo (VARCHAR)
+  5. ✅ Photos display everywhere!
+
+
+═════════════════════════════════════════════════════════════════════════════
+QUICK CHECKLIST:
+═════════════════════════════════════════════════════════════════════════════
+
+  [ ] Read this file (you just did!)
+  [ ] Copy the SQL migration above
+  [ ] Go to Supabase SQL Editor
+  [ ] Paste and run the SQL
+  [ ] See success message
+  [ ] Next: Create Storage buckets (see STORAGE_SETUP.md)
+  [ ] Test uploading a photo
+  [ ] ✅ Success! Photos work!
+
+═════════════════════════════════════════════════════════════════════════════

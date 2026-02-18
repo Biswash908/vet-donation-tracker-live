@@ -59,7 +59,7 @@ export default function AdminDashboard({ onBack, onAddNewCase, onEditCase }: Adm
             >
               <Plus className="size-4" />
               <span className="hidden sm:inline">Add New Case</span>
-              <span className="sm:hidden">Add New Case</span>
+              <span className="sm:hidden">Add</span>
             </Button>
           </div>
         </div>
@@ -142,8 +142,8 @@ function CaseCard({ pet, onEdit }: CaseCardProps) {
           className="px-2.5 py-0.5 rounded-lg text-xs font-medium ml-2 shrink-0 border"
           style={{
             borderColor: 'rgba(0,0,0,0.1)',
-            backgroundColor: displayStatus === 'pending' ? '#fef3c7' : displayStatus === 'active' ? '#dbeafe' : displayStatus === 'partially_funded' ? '#fca5a5' : displayStatus === 'closed' ? '#e5e7eb' : '#dcfce7',
-            color: displayStatus === 'pending' ? '#92400e' : displayStatus === 'active' ? '#193cb8' : displayStatus === 'partially_funded' ? '#7f1d1d' : displayStatus === 'closed' ? '#374151' : '#16a34a'
+            backgroundColor: displayStatus === 'pending' ? '#fef3c7' : displayStatus === 'active' ? '#dbeafe' : displayStatus === 'partially_funded' ? '#fca5a5' : '#dcfce7',
+            color: displayStatus === 'pending' ? '#92400e' : displayStatus === 'active' ? '#193cb8' : displayStatus === 'partially_funded' ? '#7f1d1d' : '#16a34a'
           }}
         >
           {displayStatus.replace('_', ' ')}
