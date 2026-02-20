@@ -59,12 +59,15 @@ export default function EditCase({ petId, onBack }: EditCaseProps) {
             ? (() => {
                 try {
                   const parsed = JSON.parse(data.invoice_file);
+                  console.log('[v0] Parsed invoices:', parsed);
                   return Array.isArray(parsed) ? parsed : [data.invoice_file];
                 } catch {
+                  console.log('[v0] Failed to parse, using raw:', data.invoice_file);
                   return [data.invoice_file];
                 }
               })()
             : [];
+          console.log('[v0] Setting existing invoice URLs:', urls);
           setExistingInvoiceUrls(urls);
           setOriginalInvoiceUrls(urls);
         }
@@ -192,9 +195,12 @@ export default function EditCase({ petId, onBack }: EditCaseProps) {
           return;
         }
         newInvoiceUrls.push(invoiceUrl);
+        console.log('[v0] Uploaded invoice:', invoiceUrl);
       }
       
       const allUrls = [...existingInvoiceUrls, ...newInvoiceUrls];
+      console.log('[v0] All invoice URLs before save:', allUrls);
+      console.log('[v0] Invoice file stringified:', allUrls.length > 0 ? JSON.stringify(allUrls) : null);
       updates.invoice_file = allUrls.length > 0 ? JSON.stringify(allUrls) : null;
 
       await updateInvoice(petId, updates);
@@ -400,22 +406,22 @@ export default function EditCase({ petId, onBack }: EditCaseProps) {
               {showDonationForm && (
                 <div className="bg-[#f8fafc] border border-[#e2e8f0] rounded-lg p-4 mb-4">
                   <h4 className="text-lg font-medium text-[#0f172b] mb-4">Log New Donation</h4>
-                  <div className="space-y-3">
-                    <div className="space-y-2">
-                      <Label htmlFor="donation-amount">Donation Amount *</Label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#555555]">AED</span>
-                        <Input
-                          id="donation-amount"
-                          type="number"
-                          step="0.01"
-                          placeholder="0.00"
-                          value={newDonation.amount}
-                          onChange={(e) => setNewDonation({ ...newDonation, amount: e.target.value })}
-                          className="pl-7 bg-[#f6f6f6] border-[#e5e5e5]"
-                        />
+                    <div className="space-y-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="donation-amount">Donation Amount *</Label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#555555] font-medium">AED</span>
+                          <Input
+                            id="donation-amount"
+                            type="number"
+                            step="0.01"
+                            placeholder="0.00"
+                            value={newDonation.amount}
+                            onChange={(e) => setNewDonation({ ...newDonation, amount: e.target.value })}
+                            className="pl-11 bg-[#f6f6f6] border-[#e5e5e5]"
+                          />
+                        </div>
                       </div>
-                    </div>
 
                     <div className="space-y-2">
                       <Label htmlFor="donor-name">Donor Name (Optional)</Label>
@@ -749,7 +755,7 @@ export default function EditCase({ petId, onBack }: EditCaseProps) {
                       <div className="space-y-2">
                         <Label htmlFor="donation-amount">Donation Amount *</Label>
                         <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#555555]">AED</span>
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#555555] font-medium">AED</span>
                           <Input
                             id="donation-amount"
                             type="number"
@@ -757,7 +763,7 @@ export default function EditCase({ petId, onBack }: EditCaseProps) {
                             placeholder="0.00"
                             value={newDonation.amount}
                             onChange={(e) => setNewDonation({ ...newDonation, amount: e.target.value })}
-                            className="pl-7 bg-[#f6f6f6] border-[#e5e5e5]"
+                            className="pl-11 bg-[#f6f6f6] border-[#e5e5e5]"
                           />
                         </div>
                       </div>

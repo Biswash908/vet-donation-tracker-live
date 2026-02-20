@@ -85,6 +85,11 @@ export async function fetchInvoiceById(id: string): Promise<Invoice | null> {
     return null;
   }
 
+  console.log('[v0] Fetched invoice data:', data);
+  if (data?.invoice_file) {
+    console.log('[v0] Invoice file raw:', data.invoice_file);
+  }
+
   return data;
 }
 
@@ -104,6 +109,11 @@ export async function createInvoice(invoice: Omit<Invoice, 'id' | 'created_at'>)
 }
 
 export async function updateInvoice(id: string, updates: Partial<Invoice>): Promise<Invoice | null> {
+  console.log('[v0] Updating invoice with:', updates);
+  if (updates.invoice_file) {
+    console.log('[v0] Invoice file to save (length:', updates.invoice_file.length, '):', updates.invoice_file);
+  }
+  
   const { data, error } = await supabase
     .from('invoices')
     .update(updates)
@@ -114,6 +124,11 @@ export async function updateInvoice(id: string, updates: Partial<Invoice>): Prom
   if (error) {
     console.error('Error updating invoice:', error);
     throw error;
+  }
+
+  console.log('[v0] Updated invoice returned from DB:', data);
+  if (data?.invoice_file) {
+    console.log('[v0] Returned invoice_file (length:', data.invoice_file.length, '):', data.invoice_file);
   }
 
   return data;
