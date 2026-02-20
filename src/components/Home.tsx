@@ -3,6 +3,10 @@ import { fetchInvoices, Invoice } from '../lib/supabase';
 import { useState, useEffect } from 'react';
 import svgPaths from '../imports/svg-2n5pj4qi5n';
 
+// logo asset
+import logo from '../../JLT.png';
+
+
 interface HomeProps {
   onSelectPet: (id: string) => void;
   onAdminClick: () => void;
@@ -12,14 +16,23 @@ export default function Home({ onSelectPet, onAdminClick }: HomeProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const loadInvoices = async () => {
       try {
-        const data = await fetchInvoices();
+        setError(null);
+        // Add timeout to prevent infinite loading
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Request timeout')), 10000)
+        );
+        
+        const dataPromise = fetchInvoices();
+        const data = await Promise.race([dataPromise, timeoutPromise]) as Invoice[];
         setInvoices(data);
       } catch (error) {
         console.error('Failed to load invoices:', error);
+        setError('Failed to load campaigns. Please check your connection and try refreshing the page.');
       } finally {
         setLoading(false);
       }
@@ -52,46 +65,52 @@ export default function Home({ onSelectPet, onAdminClick }: HomeProps) {
     <div className="bg-white min-h-screen relative">
       <div className="bg-gradient-to-b from-[#eff6ff] to-white min-h-screen pb-20 flex flex-col">
         {/* Main Content */}
-        <main className="px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-16 max-w-[1536px] mx-auto flex-1">
+        <main className="px-4 sm:px-6 lg:px-8 py-8 sm:py-10 lg:py-20 max-w-[1536px] mx-auto flex-1">
           {/* Organization Section */}
-          <div className="max-w-[896px] mx-auto mb-8 lg:mb-12 text-center">
-            <h2 className="text-2xl lg:text-[28.2px] text-[#0f172b] mb-3 leading-9">
-              JLT Cats
-            </h2>
-            <p className="text-[14px] lg:text-[16.7px] text-[#314158] leading-[22px] lg:leading-[29.25px] mb-6">
-              We are a dedicated rescue group based in JLT, working tirelessly to provide medical care and shelter for abandoned cats and dogs. Every donation goes directly to veterinary treatment, helping us save more lives in our community.
+          <div className="max-w-[896px] mx-auto mb-6 lg:mb-8 text-center">
+            {/* organization logo */}
+          <div className="mb-6 lg:mb-8 flex justify-center">
+            <div className="p-4 lg:p-6 rounded-full bg-white/80 backdrop-blur-sm shadow-sm border border-white/50 overflow-hidden">
+              <img
+                src={logo}
+                alt="JLT Cats logo"
+                className="h-20 w-20 sm:h-24 sm:w-24 lg:h-32 lg:w-32 mx-auto rounded-full object-cover"
+              />
+            </div>
+          </div>
+            <p className="text-[14px] lg:text-[16.7px] text-[#314158] leading-[22px] lg:leading-[29.25px] mb-8 max-w-2xl mx-auto">
+              Please help us help the cats of JLT
             </p>
 
             {/* Overall Progress */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm lg:text-base">
-                <span className="font-bold text-[#0f172b]">
-                  AED {totalRaised.toLocaleString()} raised of AED {totalGoal.toLocaleString()} goal
-                </span>
-                <span className="text-[#45556c]">
-                  {activeCampaigns} active campaigns • {overallProgress}%
-                </span>
-              </div>
-              <div className="w-full bg-[#e2e8f0] rounded-full h-4">
-                <div
-                  className="bg-[#155dfc] h-4 rounded-full transition-all"
-                  style={{ width: `${Math.min(overallProgress, 100)}%` }}
-                />
-              </div>
+            <div className="w-full space-y-3 pb-8 lg:pb-10">
+             {/* Top Row - Text Labels Above Bar */}
+            <div className="flex items-center justify-between gap-4">
+              {/* Left Side - Amount Raised */}
+              <p className="text-xs lg:text-[15px] font-bold text-[#0f172b] leading-4 lg:leading-6">
+                AED {totalRaised.toLocaleString()} raised of AED {totalGoal.toLocaleString()} goal
+              </p>
+
+              {/* Right Side - Campaigns and Percentage */}
+              <p className="text-xs lg:text-[15px] text-[#45556c] leading-4 lg:leading-6 whitespace-nowrap">
+                {activeCampaigns} active campaigns • {overallProgress}%
+              </p>
+            </div>
+
+            {/* Progress Bar - Full Width Below */}
+            <div className="w-full bg-[#e2e8f0] rounded-full h-2 lg:h-4">
+              <div
+                className="bg-[#155dfc] h-2 lg:h-4 rounded-full transition-all"
+                style={{ width: `${Math.min(overallProgress, 100)}%` }}
+              />
+            </div>
             </div>
           </div>
 
-          {/* Browse Section */}
-          <div className="mb-6 lg:mb-8">
-            <h2 className="text-[20px] lg:text-[22.3px] text-[#0f172b] mb-2 leading-8">
-              Browse veterinary fundraisers
-            </h2>
-            <p className="text-[14px] lg:text-[15px] text-[#45556c] leading-[22px] lg:leading-6 mb-4">
-              Help animals in need get the medical care they deserve
-            </p>
-
+          {/* Search Bar Section */}
+          <div className="mb-8 lg:mb-10">
             {/* Search Bar - Desktop Only */}
-            <div className="hidden lg:block max-w-[576px] relative mb-8">
+            <div className="hidden lg:block max-w-[576px] mx-auto relative">
               <div className="absolute left-3 top-1/2 -translate-y-1/2 size-5">
                 <svg className="block size-full" fill="none" viewBox="0 0 20 20">
                   <path d={svgPaths.pcddfd00} stroke="#90A1B9" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.66667" />
@@ -108,7 +127,7 @@ export default function Home({ onSelectPet, onAdminClick }: HomeProps) {
             </div>
 
             {/* Search Bar - Mobile */}
-            <div className="lg:hidden relative mb-6">
+            <div className="lg:hidden relative">
               <div className="absolute left-3 top-1/2 -translate-y-1/2 size-5">
                 <svg className="block size-full" fill="none" viewBox="0 0 20 20">
                   <path d={svgPaths.pcddfd00} stroke="#90A1B9" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.66667" />
@@ -129,6 +148,34 @@ export default function Home({ onSelectPet, onAdminClick }: HomeProps) {
           {loading && (
             <div className="text-center py-12">
               <p className="text-slate-600 text-lg">Loading campaigns...</p>
+            </div>
+          )}
+
+          {/* Error state */}
+          {error && (
+            <div className="text-center py-12">
+              <p className="text-red-600 text-lg mb-4">{error}</p>
+              <button
+                onClick={() => {
+                  setLoading(true);
+                  setError(null);
+                  const loadInvoices = async () => {
+                    try {
+                      const data = await fetchInvoices();
+                      setInvoices(data);
+                    } catch (err) {
+                      console.error('Failed to load invoices:', err);
+                      setError('Failed to load campaigns. Please check your connection and try refreshing the page.');
+                    } finally {
+                      setLoading(false);
+                    }
+                  };
+                  loadInvoices();
+                }}
+                className="px-4 py-2 bg-[#155dfc] text-white rounded-lg hover:bg-[#1447e6] transition-colors"
+              >
+                Retry
+              </button>
             </div>
           )}
 
@@ -159,7 +206,12 @@ export default function Home({ onSelectPet, onAdminClick }: HomeProps) {
           )}
 
           {/* No results */}
-          {!loading && filteredInvoices.length === 0 && (
+          {!loading && !error && filteredInvoices.length === 0 && invoices.length === 0 && (
+            <div className="text-center py-12">
+              <p className="text-slate-600 text-lg">No campaigns available yet.</p>
+            </div>
+          )}
+          {!loading && !error && filteredInvoices.length === 0 && invoices.length > 0 && (
             <div className="text-center py-12">
               <p className="text-slate-600 text-lg">No campaigns found matching your search.</p>
             </div>
@@ -170,7 +222,7 @@ export default function Home({ onSelectPet, onAdminClick }: HomeProps) {
         <div className="px-4 sm:px-6 lg:px-8 py-4 flex justify-center">
           <button 
             onClick={onAdminClick}
-            className="text-sm px-6 py-2 border border-slate-300 rounded hover:bg-slate-50 transition-colors"
+            className="text-sm px-6 py-2.5 border-2 border-[#155dfc] text-[#155dfc] bg-transparent rounded-lg hover:bg-[#155dfc]/10 focus:ring-2 focus:ring-[#155dfc]/30 focus:ring-offset-2 transition-colors font-medium"
           >
             Log in as admin
           </button>
@@ -204,7 +256,7 @@ function CampaignCardDesktop({ pet, onClick }: CampaignCardProps) {
 
   return (
     <div
-      className="bg-white border border-[#e2e8f0] rounded-[10px] overflow-hidden shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)] cursor-pointer hover:shadow-lg transition-shadow"
+      className="bg-white border border-[#e2e8f0] rounded-[10px] overflow-hidden shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)] cursor-pointer hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200"
       onClick={onClick}
     >
       {/* Image */}
@@ -231,7 +283,7 @@ function CampaignCardDesktop({ pet, onClick }: CampaignCardProps) {
 
       {/* Content */}
       <div className="p-5">
-        <h3 className="text-[16.7px] lg:text-[17px] text-[#0f172b] mb-2 leading-7 min-h-[56px]">
+        <h3 className="text-[16.7px] lg:text-[17px] text-[#0f172b] mb-0 leading-7 min-h-[56px]">
           {pet.animal_name}: {pet.medical_condition}
         </h3>
 
@@ -275,7 +327,7 @@ function CampaignCardMobile({ pet, onClick }: CampaignCardProps) {
 
   return (
     <div
-      className="bg-white border border-[#e2e8f0] rounded-[10px] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)] cursor-pointer hover:shadow-md transition-shadow p-[17px]"
+      className="bg-white border border-[#e2e8f0] rounded-[10px] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)] cursor-pointer hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 p-[17px]"
       onClick={onClick}
     >
       <div className="flex gap-3">

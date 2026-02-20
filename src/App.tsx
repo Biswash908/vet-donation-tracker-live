@@ -3,12 +3,13 @@ import Home from './components/Home';
 import PetDetail from './components/PetDetail';
 import AddNewCase from './components/AddNewCase';
 import AdminDashboard from './components/AdminDashboard';
+import AdminLogin from './components/AdminLogin';
 import EditCase from './components/EditCase';
 import { fetchInvoices, Invoice } from './lib/supabase';
 
 export default function App() {
   const [selectedPetId, setSelectedPetId] = useState<string | null>(null);
-  const [currentView, setCurrentView] = useState<'home' | 'admin-dashboard' | 'admin-add-case' | 'admin-edit-case'>('home');
+  const [currentView, setCurrentView] = useState<'home' | 'admin-login' | 'admin-dashboard' | 'admin-add-case' | 'admin-edit-case'>('home');
   const [editingPetId, setEditingPetId] = useState<string | null>(null);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -33,6 +34,15 @@ export default function App() {
   const handleRefresh = () => {
     setRefreshKey(prev => prev + 1);
   };
+
+  if (currentView === 'admin-login') {
+    return (
+      <AdminLogin 
+        onLogin={() => setCurrentView('admin-dashboard')}
+        onBack={() => setCurrentView('home')}
+      />
+    );
+  }
 
   if (currentView === 'admin-dashboard') {
     return (
@@ -76,5 +86,5 @@ export default function App() {
     );
   }
 
-  return <Home onSelectPet={(id) => setSelectedPetId(id)} onAdminClick={() => setCurrentView('admin-dashboard')} />;
+  return <Home onSelectPet={(id) => setSelectedPetId(id)} onAdminClick={() => setCurrentView('admin-login')} />;
 }

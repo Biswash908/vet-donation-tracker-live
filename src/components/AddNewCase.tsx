@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
-import { ArrowLeft, Upload, X, FileText } from 'lucide-react';
+import { ArrowLeft, Upload, X, FileText, Loader2 } from 'lucide-react';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
@@ -44,6 +44,35 @@ export default function AddNewCase({ onBack }: AddNewCaseProps) {
   const removeInvoiceFile = (index: number) => {
     setInvoiceFiles(invoiceFiles.filter((_, i) => i !== index));
   };
+
+  const hasUnsavedChanges = (): boolean =>
+    !!(
+      newCase.animal_name ||
+      newCase.medical_condition ||
+      newCase.estimated_cost ||
+      newCase.payment_link ||
+      newCase.pet_story ||
+      newCase.instagram_link ||
+      photoFile ||
+      invoiceFiles.length > 0
+    );
+
+  const handleBack = () => {
+    if (hasUnsavedChanges() && !confirm('You have unsaved changes. Are you sure you want to leave? Your changes will not be saved.')) {
+      return;
+    }
+    onBack();
+  };
+
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges()) {
+        e.preventDefault();
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [newCase, photoFile, invoiceFiles]);
 
   const handlePublish = async () => {
     if (!newCase.animal_name || !newCase.medical_condition || !newCase.estimated_cost || !newCase.payment_link) {
@@ -93,7 +122,7 @@ export default function AddNewCase({ onBack }: AddNewCaseProps) {
         pet_photo: photoUrl,
         pet_story: newCase.pet_story || null,
         instagram_link: newCase.instagram_link || null,
-        invoice_file: invoiceUrls.length > 0 ? invoiceUrls[0] : null,
+        invoice_file: invoiceUrls.length > 0 ? JSON.stringify(invoiceUrls) : null,
         status: 'pending' as const
       };
 
@@ -129,7 +158,7 @@ export default function AddNewCase({ onBack }: AddNewCaseProps) {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-start h-16 sm:h-20 gap-4">
             <Button 
-              onClick={onBack}
+              onClick={handleBack}
               variant="ghost"
               size="sm"
               className="gap-2 text-[#0a0a0a] hover:bg-slate-100"
@@ -233,7 +262,7 @@ export default function AddNewCase({ onBack }: AddNewCaseProps) {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="invoice-upload">Invoice/Receipt (Optional)</Label>
+                <Label htmlFor="invoice-upload">Invoices (Optional - multiple allowed)</Label>
                 <div className="relative">
                   <input
                     id="invoice-upload"
@@ -274,6 +303,13 @@ export default function AddNewCase({ onBack }: AddNewCaseProps) {
                       ))}
                     </div>
                   )}
+
+                  {isLoading && invoiceFiles.length > 0 && (
+                    <div className="mt-3 flex items-center gap-2 text-sm text-[#45556c]">
+                      <Loader2 className="size-4 animate-spin text-[#155dfc]" />
+                      <span>Uploading invoices...</span>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -288,12 +324,19 @@ export default function AddNewCase({ onBack }: AddNewCaseProps) {
               </div>
 
               <div className="flex justify-end gap-3 pt-4">
-                <Button variant="outline" onClick={onBack} disabled={isLoading}>
+                <Button variant="outline" onClick={handleBack} disabled={isLoading}>
                   <ArrowLeft className="size-4" />
                   Cancel
                 </Button>
-                <Button onClick={handlePublish} className="bg-blue-600 hover:bg-blue-700" disabled={isLoading}>
-                  {isLoading ? 'Publishing...' : 'Publish Case'}
+                <Button onClick={handlePublish} className="bg-blue-600 hover:bg-blue-700 gap-2" disabled={isLoading}>
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="size-4 animate-spin" />
+                      Publishing...
+                    </>
+                  ) : (
+                    'Publish Case'
+                  )}
                 </Button>
               </div>
             </div>

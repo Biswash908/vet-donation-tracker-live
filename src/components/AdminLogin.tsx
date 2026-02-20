@@ -1,92 +1,117 @@
-import { useState } from 'react';
-import { Button } from './ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
-import { Lock } from 'lucide-react';
+import { useState } from "react";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
+import { Lock, ArrowLeft } from "lucide-react";
+import logo from "../../JLT.png";
 
 interface AdminLoginProps {
   onLogin: () => void;
-  navigateTo: (page: 'admin-login' | 'admin-dashboard') => void;
+  onBack: () => void;
 }
 
-export default function AdminLogin({ onLogin, navigateTo }: AdminLoginProps) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+export default function AdminLogin({ onLogin, onBack }: AdminLoginProps) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Mock authentication - in a real app, this would validate against a database
-    if (email === 'admin@example.com' && password === 'password') {
-      setError('');
+    if (email.trim() && password.trim()) {
       onLogin();
-    } else {
-      setError('Invalid email or password. Try admin@example.com / password');
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-100 to-white flex items-center justify-center">
-      <div className="container mx-auto px-4 max-w-md">
-        <Card>
-          <CardHeader className="text-center">
-            <div className="flex justify-center mb-4">
-              <div className="bg-blue-100 p-3 rounded-full">
-                <Lock className="size-8 text-blue-600" />
-              </div>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#eff6ff] via-white to-[#f0f9ff] px-4 py-12">
+      
+      {/* Container */}
+      <div className="max-w-lg w-[480px] space-y-6">
+
+        {/* Back Button */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onBack}
+          className="gap-2 text-slate-600 hover:text-slate-900 hover:bg-white/70 rounded-lg"
+        >
+          <ArrowLeft className="size-4" />
+          Back
+        </Button>
+
+        {/* Card */}
+        <div className="bg-white/90 backdrop-blur rounded-2xl border border-slate-200 shadow-lg p-6 sm:p-8">
+
+          {/* Header */}
+          <div className="flex items-center gap-4 mb-6">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 border border-blue-100">
+              <img
+                src={logo}
+                alt="Logo"
+                className="h-8 w-8 rounded-lg object-cover"
+              />
             </div>
-            <CardTitle className="text-2xl">Admin Login</CardTitle>
-            <CardDescription>
-              Access the organization dashboard
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="admin@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-              </div>
 
-              {error && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-800">
-                  {error}
-                </div>
-              )}
-
-              <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700">
-                Sign In
-              </Button>
-            </form>
-
-            <div className="mt-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
-              <p className="text-xs text-slate-600 mb-2">Demo credentials:</p>
-              <p className="text-xs text-slate-700">
-                Email: <span className="font-mono">admin@example.com</span><br />
-                Password: <span className="font-mono">password</span>
+            <div>
+              <h1 className="text-xl font-semibold text-slate-900">
+                Admin Login
+              </h1>
+              <p className="text-sm text-slate-500">
+                JLT Cat Lovers' Group
               </p>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-4">
+
+            {/* Email */}
+            <div className="space-y-1.5">
+              <Label htmlFor="email" className="text-slate-700">
+                Email
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="admin@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="h-11 bg-slate-50 focus:bg-white"
+              />
+            </div>
+
+            {/* Password */}
+            <div className="space-y-1.5">
+              <Label htmlFor="password" className="text-slate-700">
+                Password
+              </Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="Enter your password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="h-11 bg-slate-50 focus:bg-white"
+              />
+            </div>
+
+            {/* Button */}
+            <Button
+              type="submit"
+              className="w-full h-11 rounded-xl bg-[#155dfc] hover:bg-[#1247d4] text-white font-medium shadow-md hover:shadow-lg transition"
+            >
+              Sign In
+            </Button>
+          </form>
+
+          {/* Footer Note */}
+          <p className="mt-5 flex items-center justify-center gap-2 text-xs text-slate-400">
+            <Lock className="size-3.5" />
+            Any email & password works for demo
+          </p>
+
+        </div>
       </div>
     </div>
   );

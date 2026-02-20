@@ -21,6 +21,24 @@ export default function PetDetail({ pet, onBack }: PetDetailProps) {
     return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
   };
 
+  // Ensure URL has protocol
+  const formatPaymentLink = (url: string | undefined): string => {
+    if (!url) return '';
+    // If URL already has protocol, return as is
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+    // Otherwise, prepend https://
+    return `https://${url}`;
+  };
+
+  const handleDonateClick = () => {
+    if (pet.payment_link) {
+      const formattedUrl = formatPaymentLink(pet.payment_link);
+      window.open(formattedUrl, '_blank', 'noopener,noreferrer');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#eff6ff] to-white">
       {/* Header */}
@@ -49,7 +67,200 @@ export default function PetDetail({ pet, onBack }: PetDetailProps) {
 
       {/* Main Content */}
       <main className="px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-12 max-w-[1536px] mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6 sm:gap-8">
+        {/* Mobile View - Reordered */}
+        <div className="lg:hidden space-y-6">
+          {/* 1. Pet Header Card - Name above photo */}
+          <div className="bg-white border border-[#e2e8f0] rounded-[10px] p-6 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)]">
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <h2 className="text-[30px] text-[#0a0a0a] leading-9 mb-1">
+                  {pet.animal_name}
+                </h2>
+              </div>
+              <div className={`px-2.5 py-0.5 rounded-lg border border-[rgba(0,0,0,0.1)] text-xs leading-4 ${
+                isFunded 
+                  ? 'bg-[#dcfce7] text-[#016630]' 
+                  : 'bg-[#dbeafe] text-[#193cb8]'
+              }`}>
+                {isFunded ? 'funded' : 'partially funded'}
+              </div>
+            </div>
+
+            {/* Pet Image */}
+            {pet.pet_photo && (
+              <div className="rounded-[10px] overflow-hidden">
+                <img 
+                  src={pet.pet_photo} 
+                  alt={pet.animal_name}
+                  className="w-full h-[250px] sm:h-[300px] object-cover"
+                />
+              </div>
+            )}
+            {!pet.pet_photo && (
+              <div className="rounded-[10px] overflow-hidden bg-[#f0f0f0] h-[250px] sm:h-[300px] flex items-center justify-center">
+                <p className="text-[#45556c]">No photo available</p>
+              </div>
+            )}
+          </div>
+
+          {/* 2. Donation Progress Bar */}
+          <div className="bg-white border border-[#e2e8f0] rounded-[10px] p-6 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)]">
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex-1 min-w-0">
+                <div className="text-[56px] sm:text-[60px] font-bold text-[#0f172b] mb-1 leading-none">
+                  AED {totalDonated.toFixed(2)}
+                </div>
+                <div className="text-sm text-[#45556c] mt-1">
+                  raised of AED {pet.estimated_cost.toFixed(2)} goal
+                </div>
+              </div>
+              {/* Invoice Button - Always visible in mobile */}
+              <button
+                onClick={() => setInvoicesOpen(!invoicesOpen)}
+                className="flex items-center gap-1 text-[#155dfc] hover:text-[#1447e6] transition-colors shrink-0"
+              >
+                <FileText className="size-4" />
+                <span className="text-sm font-medium">Invoice</span>
+                {invoicesOpen ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
+              </button>
+            </div>
+
+            {/* Invoice Dropdown */}
+            {invoicesOpen && (
+              <div className="mb-4 bg-[#f8fafc] border border-[#e2e8f0] rounded-lg p-4">
+                <h4 className="text-sm font-medium text-[#0f172b] mb-3">Uploaded Invoices</h4>
+                <div className="space-y-2">
+                  {pet.invoice_file ? (
+                    <button 
+                      onClick={() => {
+                        // Parse invoice_file - can be single URL or JSON array
+                        let invoiceUrls: string[] = [];
+                        try {
+                          const parsed = JSON.parse(pet.invoice_file);
+                          invoiceUrls = Array.isArray(parsed) ? parsed : [pet.invoice_file];
+                        } catch {
+                          invoiceUrls = [pet.invoice_file];
+                        }
+                        
+                        invoiceUrls.forEach(url => {
+                          const link = document.createElement('a');
+                          link.href = url;
+                          link.target = '_blank';
+                          link.rel = 'noopener noreferrer';
+                          document.body.appendChild(link);
+                          link.click();
+                          document.body.removeChild(link);
+                        });
+                      }}
+                      className="flex items-center gap-2 text-sm text-[#155dfc] hover:underline w-full text-left"
+                    >
+                      <FileText className="size-4 flex-shrink-0" />
+                      <span className="truncate">{pet.animal_name} Invoice</span>
+                    </button>
+                  ) : (
+                    <p className="text-sm text-[#64748b]">No invoices uploaded yet</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Progress Bar */}
+            <div className="w-full bg-[#e2e8f0] rounded-full h-3 mb-6">
+              <div
+                className="bg-[#155dfc] h-3 rounded-full transition-all"
+                style={{ width: `${Math.min(progressPercentage, 100)}%` }}
+              />
+            </div>
+
+            {/* 3. Donate Button */}
+            <Button 
+              className="w-full bg-[#155dfc] hover:bg-[#1447e6] text-white h-12 text-base gap-2"
+              onClick={handleDonateClick}
+            >
+              <Heart className="size-5" />
+              Donate Now
+            </Button>
+            <p className="text-xs text-center text-[#64748b] mt-3">
+              You'll be redirected to the veterinary clinic's secure payment page
+            </p>
+          </div>
+
+          {/* 4. Details */}
+          <div className="space-y-6">
+            {/* Pet's Story */}
+            <div className="bg-white border border-[#e2e8f0] rounded-[10px] p-6 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)]">
+              <h3 className="text-[20px] font-medium text-[#0f172b] mb-3 leading-7">
+                Pet's Story
+              </h3>
+              <p className="text-[15px] text-[#45556c] leading-6 whitespace-pre-wrap">
+                {pet.pet_story}
+              </p>
+            </div>
+
+            {/* Medical Condition */}
+            <div className="bg-white border border-[#e2e8f0] rounded-[10px] p-6 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)]">
+              <h3 className="text-[20px] font-medium text-[#0f172b] mb-3 leading-7">
+                Medical Condition
+              </h3>
+              <p className="text-[15px] text-[#45556c] leading-6">
+                {pet.medical_condition}
+              </p>
+            </div>
+
+            {/* Recent Donations */}
+            <div className="bg-white border border-[#e2e8f0] rounded-[10px] p-6 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)]">
+              <h3 className="text-[20px] font-medium text-[#0f172b] mb-1 leading-7">
+                Recent Donations
+              </h3>
+              <p className="text-sm text-[#45556c] mb-6">
+                {(pet.donations || []).length} generous {(pet.donations || []).length === 1 ? 'donor' : 'donors'}
+              </p>
+
+              <div className="space-y-3">
+                {(pet.donations || []).map((donation) => (
+                  <div 
+                    key={donation.id}
+                    className="bg-[#f8fafc] border border-[#e2e8f0] rounded-lg p-4"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-[15px] text-[#0f172b] font-medium">
+                          {donation.donor_name || 'Anonymous'}
+                        </p>
+                        <p className="text-sm text-[#45556c]">
+                          {formatDate(donation.created_at)}
+                        </p>
+                      </div>
+                      <p className="text-[17px] font-semibold text-[#16a34a]">
+                        AED {donation.amount.toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Follow Journey - Mobile */}
+            {pet.instagram_link && (
+              <div className="bg-white border border-[#e2e8f0] rounded-[10px] p-6 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)]">
+                <h3 className="text-[17px] font-medium text-[#0f172b] mb-4">
+                  Follow Our Journey
+                </h3>
+                <Button
+                  variant="outline"
+                  className="w-full gap-2 border-[#e2e8f0]"
+                  onClick={() => window.open(pet.instagram_link, '_blank')}
+                >
+                  <Instagram className="size-4" />
+                  View on Instagram
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Desktop View - Original Layout */}
+        <div className="hidden lg:grid lg:grid-cols-[1fr_380px] gap-6 sm:gap-8">
           {/* Left Column */}
           <div className="space-y-6">
             {/* Pet Header Card */}
@@ -59,7 +270,6 @@ export default function PetDetail({ pet, onBack }: PetDetailProps) {
                   <h2 className="text-[30px] text-[#0a0a0a] leading-9 mb-1">
                     {pet.animal_name}
                   </h2>
-                  <p className="text-sm text-[#717182]">Dog</p>
                 </div>
                 <div className={`px-2.5 py-0.5 rounded-lg border border-[rgba(0,0,0,0.1)] text-xs leading-4 ${
                   isFunded 
@@ -227,7 +437,7 @@ export default function PetDetail({ pet, onBack }: PetDetailProps) {
               {/* Donate Button */}
               <Button 
                 className="w-full bg-[#155dfc] hover:bg-[#1447e6] text-white h-12 text-base gap-2"
-                onClick={() => window.open(pet.payment_link, '_blank')}
+                onClick={handleDonateClick}
               >
                 <Heart className="size-5" />
                 Donate Now
