@@ -183,9 +183,9 @@ export default function PetDetail({ pet, onBack }: PetDetailProps) {
           <div className="space-y-6">
             {/* Pet's Story */}
             <div className="bg-white border border-[#e2e8f0] rounded-[10px] p-6 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)]">
-              <h3 className="text-[20px] font-medium text-[#0f172b] mb-3 leading-7">
-                Pet's Story
-              </h3>
+<h3 className="text-[20px] font-medium text-[#0f172b] mb-3 leading-7">
+  {pet.animal_name}'s Story
+</h3>
               <p className="text-[15px] text-[#45556c] leading-6 whitespace-pre-wrap">
                 {pet.pet_story}
               </p>
@@ -293,9 +293,9 @@ export default function PetDetail({ pet, onBack }: PetDetailProps) {
 
             {/* Pet's Story */}
             <div className="bg-white border border-[#e2e8f0] rounded-[10px] p-6 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)]">
-              <h3 className="text-[20px] font-medium text-[#0f172b] mb-3 leading-7">
-                Pet's Story
-              </h3>
+<h3 className="text-[20px] font-medium text-[#0f172b] mb-3 leading-7">
+  {pet.animal_name}'s Story
+</h3>
               <p className="text-[15px] text-[#45556c] leading-6 whitespace-pre-wrap">
                 {pet.pet_story}
               </p>
