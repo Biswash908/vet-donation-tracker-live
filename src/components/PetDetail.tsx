@@ -365,63 +365,37 @@ export default function PetDetail({ pet, onBack }: PetDetailProps) {
                 </button>
               </div>
 
-              {/* Invoice Dropdown */}
-              {invoicesOpen && pet.invoice_file && (
-                <div className="mb-6 bg-[#f8fafc] border border-[#e2e8f0] rounded-lg p-4">
-                  <h4 className="text-sm font-medium text-[#0f172b] mb-3">Uploaded Invoices</h4>
-                  <div className="space-y-2">
-                    {(() => {
-                      let invoiceUrls: string[] = [];
-                      try {
-                        const parsed = JSON.parse(pet.invoice_file);
-                        invoiceUrls = Array.isArray(parsed) ? parsed : [pet.invoice_file];
-                        console.log('[v0] Parsed invoices in PetDetail:', invoiceUrls);
-                      } catch {
-                        invoiceUrls = [pet.invoice_file];
-                        console.log('[v0] Using raw invoice in PetDetail:', pet.invoice_file);
-                      }
-                      
-                      return invoiceUrls.map((url, index) => {
-                        // Extract filename from URL path (format: .../invoices/TIMESTAMP-filename.ext)
-                        let displayName = `Invoice`;
-                        try {
-                          const pathParts = url.split('/');
-                          const lastPart = pathParts[pathParts.length - 1];
-                          // Remove timestamp and dash prefix (format: TIMESTAMP-filename.ext)
-                          const match = lastPart.match(/^\d+-(.+)$/);
-                          if (match && match[1]) {
-                            displayName = match[1];
-                          } else if (lastPart) {
-                            displayName = lastPart;
-                          }
-                        } catch (e) {
-                          // Fallback to default name
-                          displayName = invoiceUrls.length > 1 ? `Invoice ${index + 1}` : 'Invoice';
-                        }
-                        
-                        return (
-                          <button 
-                            key={index}
-                            onClick={() => {
-                              const link = document.createElement('a');
-                              link.href = url;
-                              link.target = '_blank';
-                              link.rel = 'noopener noreferrer';
-                              document.body.appendChild(link);
-                              link.click();
-                              document.body.removeChild(link);
-                            }}
-                            className="flex items-center gap-2 text-sm text-[#155dfc] hover:underline w-full text-left"
-                          >
-                            <FileText className="size-4 flex-shrink-0" />
-                            <span className="truncate">{displayName}</span>
-                          </button>
-                        );
-                      });
-                    })()}
-                  </div>
-                </div>
-              )}
+{/* Invoice Dropdown - Desktop */}
+{invoicesOpen && (
+  <div className="mb-6 bg-[#f8fafc] border border-[#e2e8f0] rounded-lg p-4">
+    <h4 className="text-sm font-medium text-[#0f172b] mb-3">Uploaded Invoices</h4>
+    <div className="space-y-2">
+      {pet.invoice_file ? (() => {
+        let invoiceUrls: string[] = [];
+        try {
+          const parsed = JSON.parse(pet.invoice_file);
+          invoiceUrls = Array.isArray(parsed) ? parsed : [pet.invoice_file];
+        } catch {
+          invoiceUrls = [pet.invoice_file];
+        }
+
+        // Map over them with sequential names
+        return invoiceUrls.map((url, index) => (
+          <button 
+            key={index}
+            onClick={() => window.open(url, '_blank')}
+            className="flex items-center gap-2 text-sm text-[#155dfc] hover:underline w-full text-left"
+          >
+            <FileText className="size-4 flex-shrink-0" />
+            <span className="truncate">{`Invoice ${index + 1}`}</span>
+          </button>
+        ));
+      })() : (
+        <p className="text-sm text-[#64748b]">No invoices uploaded yet</p>
+      )}
+    </div>
+  </div>
+)}
 
               {/* Progress Info */}
               <div className="mb-3">
