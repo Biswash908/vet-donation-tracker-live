@@ -14,6 +14,13 @@ export default function AdminDashboard({ onBack, onAddNewCase, onEditCase }: Adm
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+  const isAdmin = localStorage.getItem("isAdmin");
+  if (!isAdmin) {
+    window.location.href = "/";
+  }
+}, []);
+
+  useEffect(() => {
     const loadInvoices = async () => {
       try {
         const data = await fetchInvoices();

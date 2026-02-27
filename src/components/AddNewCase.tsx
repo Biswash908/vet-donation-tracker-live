@@ -6,6 +6,7 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
 import { createInvoice, uploadFileToStorage } from '../lib/supabase';
+import MultiPhotoUpload from './MultiPhotoUpload';
 
 interface AddNewCaseProps {
   onBack: () => void;
@@ -21,16 +22,34 @@ export default function AddNewCase({ onBack }: AddNewCaseProps) {
     pet_story: '',
     instagram_link: ''
   });
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoFiles, setPhotoFiles] = useState<File[]>([]);
+  const [photoPreviewUrls, setPhotoPreviewUrls] = useState<string[]>([]);
   const [invoiceFiles, setInvoiceFiles] = useState<File[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setPhotoFile(file);
-      console.log('[v0] Photo selected:', file.name);
-    }
+  const handlePhotoUpload = (files: File[]) => {
+    const newFiles = [...photoFiles, ...files];
+    setPhotoFiles(newFiles);
+    
+    // Generate preview URLs for new files
+    const newPreviewUrls = [...photoPreviewUrls];
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        if (e.target?.result) {
+          newPreviewUrls.push(e.target.result as string);
+          setPhotoPreviewUrls([...newPreviewUrls]);
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+    
+    console.log('[v0] Photos selected:', files.map(f => f.name));
+  };
+
+  const removePhoto = (index: number) => {
+    setPhotoFiles(photoFiles.filter((_, i) => i !== index));
+    setPhotoPreviewUrls(photoPreviewUrls.filter((_, i) => i !== index));
   };
 
   const handleInvoiceUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -53,7 +72,7 @@ export default function AddNewCase({ onBack }: AddNewCaseProps) {
       newCase.payment_link ||
       newCase.pet_story ||
       newCase.instagram_link ||
-      photoFile ||
+      photoPreviewUrls.length > 0 ||
       invoiceFiles.length > 0
     );
 
@@ -72,7 +91,7 @@ export default function AddNewCase({ onBack }: AddNewCaseProps) {
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [newCase, photoFile, invoiceFiles]);
+  }, [newCase, photoPreviewUrls, invoiceFiles]);
 
   const handlePublish = async () => {
     if (!newCase.animal_name || !newCase.medical_condition || !newCase.estimated_cost || !newCase.payment_link) {
@@ -80,27 +99,31 @@ export default function AddNewCase({ onBack }: AddNewCaseProps) {
       return;
     }
 
-    if (!photoFile) {
-      alert('Please upload a photo of the pet');
+    if (photoFiles.length === 0) {
+      alert('Please upload at least one photo of the pet');
       return;
     }
 
     setIsLoading(true);
     try {
-      let photoUrl: string | null = null;
+      let photoUrls: string[] = [];
       let invoiceUrls: string[] = [];
 
-      // Upload photo to Supabase Storage
-      if (photoFile) {
+      // Upload photos to Supabase Storage
+      for (const file of photoFiles) {
         const timestamp = Date.now();
-        const photoPath = `pet-photos/${timestamp}-${photoFile.name}`;
-        photoUrl = await uploadFileToStorage(photoFile, 'pet-images', photoPath);
+        const photoPath = `pet-photos/${timestamp}-${file.name}`;
+        const photoUrl = await uploadFileToStorage(file, 'pet-images', photoPath);
         
-        if (!photoUrl) {
-          alert('Failed to upload photo. Please try again.');
-          setIsLoading(false);
-          return;
+        if (photoUrl) {
+          photoUrls.push(photoUrl);
         }
+      }
+
+      if (photoUrls.length === 0) {
+        alert('Failed to upload photos. Please try again.');
+        setIsLoading(false);
+        return;
       }
 
       // Upload invoice files to Supabase Storage if provided
@@ -119,7 +142,7 @@ export default function AddNewCase({ onBack }: AddNewCaseProps) {
         medical_condition: newCase.medical_condition,
         estimated_cost: parseFloat(newCase.estimated_cost),
         payment_link: newCase.payment_link,
-        pet_photo: photoUrl,
+        pet_photo: JSON.stringify(photoUrls),
         pet_story: newCase.pet_story || null,
         instagram_link: newCase.instagram_link || null,
         invoice_file: invoiceUrls.length > 0 ? JSON.stringify(invoiceUrls) : null,
@@ -139,7 +162,8 @@ export default function AddNewCase({ onBack }: AddNewCaseProps) {
         pet_story: '',
         instagram_link: ''
       });
-      setPhotoFile(null);
+      setPhotoFiles([]);
+      setPhotoPreviewUrls([]);
       setInvoiceFiles([]);
       
       onBack();
@@ -229,25 +253,12 @@ export default function AddNewCase({ onBack }: AddNewCaseProps) {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="photo-upload">Pet Photo *</Label>
-                <div className="relative">
-                  <input
-                    id="photo-upload"
-                    type="file"
-                    accept="image/*"
-                    onChange={handlePhotoUpload}
-                    className="hidden"
-                  />
-                  <label 
-                    htmlFor="photo-upload"
-                    className="flex items-center justify-center gap-2 w-full p-4 border-2 border-dashed border-blue-300 rounded-lg cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors"
-                  >
-                    <Upload className="size-5 text-blue-600" />
-                    <span className="text-blue-600">
-                      {photoFile ? photoFile.name : 'Click to upload pet photo'}
-                    </span>
-                  </label>
-                </div>
+                <Label>Pet Photos *</Label>
+                <MultiPhotoUpload
+                  photos={photoPreviewUrls}
+                  onUpload={handlePhotoUpload}
+                  onRemove={removePhoto}
+                />
               </div>
               
               <div className="space-y-2">

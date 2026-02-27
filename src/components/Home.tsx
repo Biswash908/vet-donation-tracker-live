@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import svgPaths from '../imports/svg-2n5pj4qi5n';
 
 // logo asset
-import logo from '../../JLT.png';
+const logo = '/JLT.png';
 
 
 interface HomeProps {
@@ -68,9 +68,9 @@ export default function Home({ onSelectPet, onAdminClick }: HomeProps) {
         <main className="px-4 sm:px-6 lg:px-8 py-8 sm:py-10 lg:py-20 max-w-[1536px] mx-auto flex-1">
           {/* Organization Section */}
           <div className="max-w-[896px] mx-auto mb-6 lg:mb-8 text-center">
-            {/* organization logo */}
+          {/* organization logo */}
           <div className="mb-6 lg:mb-8 flex justify-center">
-            <div className="p-4 lg:p-6 rounded-full bg-white/80 backdrop-blur-sm shadow-sm border border-white/50 overflow-hidden">
+            <div className="rounded-full bg-white/80 backdrop-blur-sm shadow-sm overflow-hidden">
               <img
                 src={logo}
                 alt="JLT Cats logo"
@@ -79,7 +79,7 @@ export default function Home({ onSelectPet, onAdminClick }: HomeProps) {
             </div>
           </div>
             <p className="text-[14px] lg:text-[16.7px] text-[#314158] leading-[22px] lg:leading-[29.25px] mb-8 max-w-2xl mx-auto">
-              Please help us help the cats of JLT
+              Please help us help the cats of JLT 🐈 🐈‍⬛
             </p>
 
             {/* Overall Progress */}
@@ -243,7 +243,6 @@ function CampaignCardDesktop({ pet, onClick }: CampaignCardProps) {
   const progressPercentage = Math.round((totalDonated / pet.estimated_cost) * 100);
   const isFunded = totalDonated >= pet.estimated_cost;
   
-  // Use stored status, with fallback logic for backwards compatibility
   let displayStatus = pet.status;
   if (pet.status === 'pending' && totalDonated > 0) {
     displayStatus = 'partially_funded';
@@ -252,42 +251,53 @@ function CampaignCardDesktop({ pet, onClick }: CampaignCardProps) {
     displayStatus = 'funded';
   }
   
-  const petImage = pet.pet_photo || 'https://images.unsplash.com/photo-1574158622682-e40e69881006?w=500&h=500&fit=crop';
+  const getProfilePhoto = (): string => {
+    if (!pet.pet_photo) return 'https://images.unsplash.com/photo-1574158622682-e40e69881006?w=500&h=500&fit=crop';
+    try {
+      const parsed = JSON.parse(pet.pet_photo);
+      const photos = Array.isArray(parsed) ? parsed : [pet.pet_photo];
+      return photos[0] || 'https://images.unsplash.com/photo-1574158622682-e40e69881006?w=500&h=500&fit=crop';
+    } catch {
+      return pet.pet_photo || 'https://images.unsplash.com/photo-1574158622682-e40e69881006?w=500&h=500&fit=crop';
+    }
+  };
+  
+  const petImage = getProfilePhoto();
 
   return (
     <div
       className="bg-white border border-[#e2e8f0] rounded-[10px] overflow-hidden shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)] cursor-pointer hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200"
       onClick={onClick}
     >
-      {/* Image */}
-      <div className="relative h-64 bg-[#f1f5f9] overflow-hidden">
-        <img
-          src={petImage}
-          alt={pet.animal_name}
-          className="w-full h-full object-cover"
-        />
-        {/* Status Badge */}
-        <div className="absolute bottom-5 left-5">
-          <div 
-            className="px-2.5 py-0.5 rounded-lg border text-xs leading-4 font-medium"
-            style={{
-              borderColor: 'rgba(0,0,0,0.1)',
-              backgroundColor: displayStatus === 'pending' ? '#fef3c7' : displayStatus === 'active' ? '#dbeafe' : displayStatus === 'partially_funded' ? '#fca5a5' : displayStatus === 'closed' ? '#e5e7eb' : '#dcfce7',
-              color: displayStatus === 'pending' ? '#92400e' : displayStatus === 'active' ? '#193cb8' : displayStatus === 'partially_funded' ? '#7f1d1d' : displayStatus === 'closed' ? '#374151' : '#16a34a'
-            }}
-          >
-            {displayStatus.replace('_', ' ')}
-          </div>
-        </div>
-      </div>
+      {/* Image Container: Added bg-slate-900 for letterboxing */}
+      <div className="relative h-64 bg-slate-100 overflow-hidden flex items-center justify-center">
+  <img
+    src={petImage}
+    alt={pet.animal_name}
+    /* !w-auto ensures it overrides any global 100% width settings */
+    className="h-full !w-auto object-contain block mx-auto"
+  />
+  
+  {/* Status Badge */}
+  <div className="absolute bottom-5 left-5">
+    <div 
+      className="px-2.5 py-0.5 rounded-lg border text-xs leading-4 font-medium shadow-sm"
+      style={{
+        borderColor: 'rgba(0,0,0,0.1)',
+        backgroundColor: displayStatus === 'pending' ? '#fef3c7' : displayStatus === 'active' ? '#dbeafe' : displayStatus === 'partially_funded' ? '#fca5a5' : displayStatus === 'closed' ? '#e5e7eb' : '#dcfce7',
+        color: displayStatus === 'pending' ? '#92400e' : displayStatus === 'active' ? '#193cb8' : displayStatus === 'partially_funded' ? '#7f1d1d' : displayStatus === 'closed' ? '#374151' : '#16a34a'
+      }}
+    >
+      {displayStatus.replace('_', ' ')}
+    </div>
+  </div>
+</div>
 
-      {/* Content */}
       <div className="p-5">
         <h3 className="text-[16.7px] lg:text-[17px] text-[#0f172b] mb-0 leading-7 min-h-[56px]">
           {pet.animal_name}: {pet.medical_condition}
         </h3>
 
-        {/* Progress Bar */}
         <div className={`h-2 rounded-full mb-3 ${
           isFunded ? 'bg-[#155dfc]' : 'bg-[#e2e8f0]'
         }`}>
@@ -299,7 +309,6 @@ function CampaignCardDesktop({ pet, onClick }: CampaignCardProps) {
           )}
         </div>
 
-        {/* Amount */}
         <p className="text-[16.7px] font-bold text-[#0f172b] leading-7">
           AED {totalDonated.toLocaleString()} raised of AED {pet.estimated_cost.toLocaleString()} goal
         </p>
@@ -314,7 +323,6 @@ function CampaignCardMobile({ pet, onClick }: CampaignCardProps) {
   const progressPercentage = Math.round((totalDonated / pet.estimated_cost) * 100);
   const isFunded = totalDonated >= pet.estimated_cost;
   
-  // Use stored status, with fallback logic for backwards compatibility
   let displayStatus = pet.status;
   if (pet.status === 'pending' && totalDonated > 0) {
     displayStatus = 'partially_funded';
@@ -323,7 +331,18 @@ function CampaignCardMobile({ pet, onClick }: CampaignCardProps) {
     displayStatus = 'funded';
   }
   
-  const petImage = pet.pet_photo || 'https://images.unsplash.com/photo-1574158622682-e40e69881006?w=500&h=500&fit=crop';
+  const getProfilePhoto = (): string => {
+    if (!pet.pet_photo) return 'https://images.unsplash.com/photo-1574158622682-e40e69881006?w=500&h=500&fit=crop';
+    try {
+      const parsed = JSON.parse(pet.pet_photo);
+      const photos = Array.isArray(parsed) ? parsed : [pet.pet_photo];
+      return photos[0] || 'https://images.unsplash.com/photo-1574158622682-e40e69881006?w=500&h=500&fit=crop';
+    } catch {
+      return pet.pet_photo || 'https://images.unsplash.com/photo-1574158622682-e40e69881006?w=500&h=500&fit=crop';
+    }
+  };
+  
+  const petImage = getProfilePhoto();
 
   return (
     <div
@@ -331,31 +350,27 @@ function CampaignCardMobile({ pet, onClick }: CampaignCardProps) {
       onClick={onClick}
     >
       <div className="flex gap-3">
-        {/* Thumbnail */}
-        <div className="relative flex-shrink-0 w-[110px] h-[110px] rounded-[10px] overflow-hidden bg-[#f1f5f9]">
+        {/* Thumbnail Container: Added bg-slate-900 and flex centering */}
+        <div className="relative flex-shrink-0 w-[110px] h-[110px] rounded-[10px] overflow-hidden bg-slate-900 flex items-center justify-center">
           <img
             src={petImage}
             alt={pet.animal_name}
-            className="w-full h-full object-cover"
+            className="max-h-full max-w-full w-auto h-auto object-contain block mx-auto"
           />
         </div>
 
-        {/* Content */}
         <div className="flex-1 min-w-0 relative">
-          {/* Donation count */}
           <p className="text-[11.4px] text-[#5b7aa6] leading-4 mb-1">
             {pet.donations?.length || 0} {(pet.donations?.length || 0) === 1 ? 'donation' : 'donations'}
           </p>
 
-          {/* Title */}
-          <h3 className="text-[13px] font-medium text-[#0f172a] leading-5 mb-3">
+          <h3 className="text-[13px] font-medium text-[#0f172a] leading-5 mb-3 pr-20">
             Help {pet.animal_name} - {pet.medical_condition}
           </h3>
 
-          {/* Status Badge - Positioned absolute on right */}
           <div className="absolute top-0 right-0">
             <div 
-              className="px-2.5 py-0.5 rounded-lg border text-[11.8px] leading-4 font-medium"
+              className="px-2 py-0.5 rounded-lg border text-[10px] leading-4 font-medium shadow-sm"
               style={{
                 borderColor: 'rgba(0,0,0,0.1)',
                 backgroundColor: displayStatus === 'pending' ? '#fef3c7' : displayStatus === 'active' ? '#dbeafe' : displayStatus === 'partially_funded' ? '#fca5a5' : displayStatus === 'closed' ? '#e5e7eb' : '#dcfce7',
@@ -366,7 +381,6 @@ function CampaignCardMobile({ pet, onClick }: CampaignCardProps) {
             </div>
           </div>
 
-          {/* Progress Bar */}
           <div className={`h-1.5 rounded-full mb-2 ${
             isFunded ? 'bg-[#2563eb]' : 'bg-[#e2e8f0]'
           }`}>
@@ -378,9 +392,8 @@ function CampaignCardMobile({ pet, onClick }: CampaignCardProps) {
             )}
           </div>
 
-          {/* Amount */}
           <p className="text-[13px] font-semibold text-[#0f172a] leading-5">
-            AED {totalDonated.toLocaleString()} raised of AED {pet.estimated_cost.toLocaleString()} goal
+            AED {totalDonated.toLocaleString()} / {pet.estimated_cost.toLocaleString()}
           </p>
         </div>
       </div>

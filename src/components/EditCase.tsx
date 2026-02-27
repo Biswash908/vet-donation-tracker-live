@@ -6,7 +6,7 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
 import { fetchInvoiceById, updateInvoice, deleteInvoice, addDonation, deleteDonation, uploadFileToStorage, type Invoice, type Donation } from '../lib/supabase';
-import PetPhotoUpload from './PetPhotoUpload';
+import MultiPhotoUpload from './MultiPhotoUpload';
 
 interface EditCaseProps {
   petId: string;
@@ -33,7 +33,9 @@ export default function EditCase({ petId, onBack }: EditCaseProps) {
     amount: '',
     donor_name: ''
   });
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoFiles, setPhotoFiles] = useState<File[]>([]);
+  const [photoUrls, setPhotoUrls] = useState<string[]>([]);
+  const [originalPhotoUrls, setOriginalPhotoUrls] = useState<string[]>([]);
   const [invoiceFiles, setInvoiceFiles] = useState<File[]>([]);
   const [existingInvoiceUrls, setExistingInvoiceUrls] = useState<string[]>([]);
   const [originalInvoiceUrls, setOriginalInvoiceUrls] = useState<string[]>([]);
@@ -54,6 +56,24 @@ export default function EditCase({ petId, onBack }: EditCaseProps) {
             status: data.status
           });
           setDonations(data.donations || []);
+          
+          // Parse existing photo URLs (can be JSON array or single URL)
+          const photoUrls = data.pet_photo
+            ? (() => {
+                try {
+                  const parsed = JSON.parse(data.pet_photo);
+                  console.log('[v0] Parsed photos:', parsed);
+                  return Array.isArray(parsed) ? parsed : [data.pet_photo];
+                } catch {
+                  console.log('[v0] Failed to parse photos, using raw:', data.pet_photo);
+                  return [data.pet_photo];
+                }
+              })()
+            : [];
+          console.log('[v0] Setting existing photo URLs:', photoUrls);
+          setPhotoUrls(photoUrls);
+          setOriginalPhotoUrls(photoUrls);
+          
           // Parse existing invoice URLs (can be JSON array or single URL)
           const urls = data.invoice_file
             ? (() => {
@@ -101,7 +121,7 @@ export default function EditCase({ petId, onBack }: EditCaseProps) {
     };
     window.addEventListener('beforeunload', handler);
     return () => window.removeEventListener('beforeunload', handler);
-  }, [pet, editedCase, photoFile, invoiceFiles, existingInvoiceUrls, originalInvoiceUrls]);
+  }, [pet, editedCase, photoFiles, photoUrls, invoiceFiles, existingInvoiceUrls, originalInvoiceUrls]);
   
   if (loading) {
     return (
@@ -136,7 +156,8 @@ export default function EditCase({ petId, onBack }: EditCaseProps) {
       editedCase.pet_story !== (pet.pet_story || '') ||
       editedCase.instagram_link !== (pet.instagram_link || '') ||
       editedCase.status !== pet.status ||
-      photoFile !== null ||
+      photoFiles.length > 0 ||
+      JSON.stringify(photoUrls) !== JSON.stringify(originalPhotoUrls) ||
       invoiceFiles.length > 0 ||
       JSON.stringify(existingInvoiceUrls) !== JSON.stringify(originalInvoiceUrls)
     );
@@ -167,20 +188,25 @@ export default function EditCase({ petId, onBack }: EditCaseProps) {
         status: editedCase.status as any
       };
 
-      // Upload new photo if provided
-      if (photoFile) {
+      // Upload new photos if provided
+      const newPhotoUrls: string[] = [];
+      for (const file of photoFiles) {
         const timestamp = Date.now();
-        const photoPath = `pet-photos/${timestamp}-${photoFile.name}`;
-        const photoUrl = await uploadFileToStorage(photoFile, 'pet-images', photoPath);
+        const photoPath = `pet-photos/${timestamp}-${file.name}`;
+        const photoUrl = await uploadFileToStorage(file, 'pet-images', photoPath);
         
         if (!photoUrl) {
           alert('Failed to upload photo. Please try again.');
           setIsSaving(false);
           return;
         }
-        
-        updates.pet_photo = photoUrl;
+        newPhotoUrls.push(photoUrl);
+        console.log('[v0] Uploaded photo:', photoUrl);
       }
+      
+      const allPhotoUrls = [...photoUrls, ...newPhotoUrls];
+      console.log('[v0] All photo URLs before save:', allPhotoUrls);
+      updates.pet_photo = allPhotoUrls.length > 0 ? JSON.stringify(allPhotoUrls) : null;
 
       // Upload new invoice files and combine with existing
       const newInvoiceUrls: string[] = [];
@@ -205,7 +231,8 @@ export default function EditCase({ petId, onBack }: EditCaseProps) {
 
       await updateInvoice(petId, updates);
       alert('Case saved successfully!');
-      setPhotoFile(null);
+      setPhotoFiles([]);
+      setPhotoUrls(allPhotoUrls);
       setInvoiceFiles([]);
       onBack();
     } catch (error) {
@@ -350,22 +377,15 @@ export default function EditCase({ petId, onBack }: EditCaseProps) {
             </CardContent>
           </Card>
 
-          {/* 2. Pet Photo */}
-          <PetPhotoUpload
-            imageUrl={photoFile ? URL.createObjectURL(photoFile) : pet.pet_photo}
-            onUpload={() => {
-              const input = document.createElement('input');
-              input.type = 'file';
-              input.accept = 'image/*';
-              input.onchange = (e) => {
-                const file = (e.target as HTMLInputElement).files?.[0];
-                if (file) {
-                  setPhotoFile(file);
-                }
-              };
-              input.click();
+          {/* 2. Pet Photos */}
+          <MultiPhotoUpload
+            photos={photoUrls}
+            onUpload={(files) => {
+              setPhotoFiles([...photoFiles, ...files]);
             }}
-            onRemove={() => setPhotoFile(null)}
+            onRemove={(index) => {
+              setPhotoUrls(photoUrls.filter((_, i) => i !== index));
+            }}
           />
 
           {/* 3. Pet's Story */}
@@ -929,24 +949,26 @@ export default function EditCase({ petId, onBack }: EditCaseProps) {
             </Card>
           </div>
 
-          {/* Right Column - Pet Photo & Summary */}
+          {/* Right Column - Pet Photos & Summary */}
           <div className="space-y-6">
-            {/* Pet Photo */}
-            <PetPhotoUpload
-              imageUrl={photoFile ? URL.createObjectURL(photoFile) : pet.pet_photo}
-              onUpload={() => {
-                const input = document.createElement('input');
-                input.type = 'file';
-                input.accept = 'image/*';
-                input.onchange = (e) => {
-                  const file = (e.target as HTMLInputElement).files?.[0];
-                  if (file) {
-                    setPhotoFile(file);
-                  }
-                };
-                input.click();
+            {/* Pet Photos */}
+            <MultiPhotoUpload
+              photos={photoUrls}
+              onUpload={(files) => {
+                setPhotoFiles([...photoFiles, ...files]);
+                files.forEach(file => {
+                  const reader = new FileReader();
+                  reader.onload = (e) => {
+                    if (e.target?.result) {
+                      setPhotoUrls(prev => [...prev, e.target.result as string]);
+                    }
+                  };
+                  reader.readAsDataURL(file);
+                });
               }}
-              onRemove={() => setPhotoFile(null)}
+              onRemove={(index) => {
+                setPhotoUrls(photoUrls.filter((_, i) => i !== index));
+              }}
             />
 
             {/* Financial Summary */}

@@ -2,6 +2,7 @@ import { ArrowLeft, FileText, Heart, Instagram, ChevronDown, ChevronUp } from 'l
 import { Button } from './ui/button';
 import { useState } from 'react';
 import type { Invoice } from '../lib/supabase';
+import PhotoCarousel from './PhotoCarousel';
 
 interface PetDetailProps {
   pet: Invoice;
@@ -14,6 +15,18 @@ export default function PetDetail({ pet, onBack }: PetDetailProps) {
   const progressPercentage = Math.round((totalDonated / pet.estimated_cost) *100);
   const stillNeeded = pet.estimated_cost - totalDonated;
   const isFunded = totalDonated >= pet.estimated_cost;
+
+  // Parse pet photos - handle both single string and JSON array formats
+  const getPetPhotos = (): string[] => {
+    if (!pet.pet_photo) return [];
+    try {
+      const parsed = JSON.parse(pet.pet_photo);
+      return Array.isArray(parsed) ? parsed : [pet.pet_photo];
+    } catch {
+      return [pet.pet_photo];
+    }
+  };
+  const petPhotos = getPetPhotos();
 
   // Format date
   const formatDate = (dateString: string) => {
@@ -71,36 +84,21 @@ export default function PetDetail({ pet, onBack }: PetDetailProps) {
         <div className="lg:hidden space-y-6">
           {/* 1. Pet Header Card - Name above photo */}
           <div className="bg-white border border-[#e2e8f0] rounded-[10px] p-6 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)]">
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <h2 className="text-[30px] text-[#0a0a0a] leading-9 mb-1">
-                  {pet.animal_name}
-                </h2>
-              </div>
-              <div className={`px-2.5 py-0.5 rounded-lg border border-[rgba(0,0,0,0.1)] text-xs leading-4 ${
+            <div className="flex items-center justify-between gap-3 mb-4">
+              <h2 className="text-[30px] text-[#0a0a0a] leading-9 flex-1 min-w-0 truncate">
+                {pet.animal_name}
+              </h2>
+              <div className={`px-3 py-1 rounded-lg border border-[rgba(0,0,0,0.1)] text-xs leading-4 whitespace-nowrap flex-shrink-0 ${
                 isFunded 
                   ? 'bg-[#dcfce7] text-[#016630]' 
                   : 'bg-[#dbeafe] text-[#193cb8]'
               }`}>
-                {isFunded ? 'funded' : 'partially funded'}
+                {isFunded ? 'funded' : 'partially'}
               </div>
             </div>
 
-            {/* Pet Image */}
-            {pet.pet_photo && (
-              <div className="rounded-[10px] overflow-hidden">
-                <img 
-                  src={pet.pet_photo} 
-                  alt={pet.animal_name}
-                  className="w-full h-[250px] sm:h-[300px] object-cover"
-                />
-              </div>
-            )}
-            {!pet.pet_photo && (
-              <div className="rounded-[10px] overflow-hidden bg-[#f0f0f0] h-[250px] sm:h-[300px] flex items-center justify-center">
-                <p className="text-[#45556c]">No photo available</p>
-              </div>
-            )}
+            {/* Pet Image Carousel */}
+            <PhotoCarousel photos={petPhotos} petName={pet.animal_name} />
           </div>
 
           {/* 2. Donation Progress Bar */}
@@ -274,21 +272,8 @@ export default function PetDetail({ pet, onBack }: PetDetailProps) {
                 </div>
               </div>
 
-              {/* Pet Image */}
-              {pet.pet_photo && (
-                <div className="rounded-[10px] overflow-hidden">
-                  <img 
-                    src={pet.pet_photo} 
-                    alt={pet.animal_name}
-                    className="w-full h-[250px] sm:h-[300px] lg:h-[400px] object-cover"
-                  />
-                </div>
-              )}
-              {!pet.pet_photo && (
-                <div className="rounded-[10px] overflow-hidden bg-[#f0f0f0] h-[250px] sm:h-[300px] lg:h-[400px] flex items-center justify-center">
-                  <p className="text-[#45556c]">No photo available</p>
-                </div>
-              )}
+              {/* Pet Image Carousel */}
+              <PhotoCarousel photos={petPhotos} petName={pet.animal_name} />
             </div>
 
             {/* Pet's Story */}
