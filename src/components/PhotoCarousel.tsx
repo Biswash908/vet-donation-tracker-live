@@ -1,6 +1,5 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { Button } from './ui/button';
 
 interface PhotoCarouselProps {
   photos: string[];
@@ -9,6 +8,7 @@ interface PhotoCarouselProps {
 
 export default function PhotoCarousel({ photos, petName }: PhotoCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
 
   if (!photos || photos.length === 0) {
     return (
@@ -18,79 +18,85 @@ export default function PhotoCarousel({ photos, petName }: PhotoCarouselProps) {
     );
   }
 
-  const nextPhoto = () => {
+  const nextPhoto = useCallback((e?: React.MouseEvent) => {
+    e?.stopPropagation();
     setCurrentIndex((prev) => (prev + 1) % photos.length);
-  };
+  }, [photos.length]);
 
-  const prevPhoto = () => {
+  const prevPhoto = useCallback((e?: React.MouseEvent) => {
+    e?.stopPropagation();
     setCurrentIndex((prev) => (prev - 1 + photos.length) % photos.length);
+  }, [photos.length]);
+
+  const handleTouchStart = (e: React.TouchEvent) => setTouchStart(e.targetTouches[0].clientX);
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStart === null) return;
+    const touchEnd = e.changedTouches[0].clientX;
+    if (touchStart - touchEnd > 50) nextPhoto();
+    if (touchStart - touchEnd < -50) prevPhoto();
+    setTouchStart(null);
   };
 
   const currentPhoto = photos[currentIndex];
 
   return (
     <div className="space-y-3">
-      {/* Main Photo Container - Fixed aspect ratio */}
-      <div className="rounded-[10px] overflow-hidden relative w-full aspect-video bg-[#f5f5f5] group flex items-center justify-center">
+      {/* Main Container - Fixed 600px height */}
+      <div 
+        className="rounded-[10px] overflow-hidden relative w-full bg-slate-100 group flex items-center justify-center"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        style={{ height: '600px' }} 
+      >
         <img 
           src={currentPhoto} 
           alt={`${petName} photo ${currentIndex + 1}`}
-          className="w-full h-full object-contain"
+          className="h-full w-auto object-contain select-none"
         />
-        
-        {/* Left clickable area - for previous photo */}
+          
+        {/* Navigation Layers */}
         {photos.length > 1 && (
-          <button
-            onClick={prevPhoto}
-            className="absolute left-0 top-0 h-full w-1/3 flex items-center justify-start pl-3 opacity-0 hover:opacity-100 transition-opacity z-20"
-            title="Previous photo"
-          >
-            <div className="size-8 sm:size-10 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center transition-colors">
-              <ChevronLeft className="size-5 sm:size-6 text-white" />
-            </div>
-          </button>
-        )}
+  <>
+    {/* LEFT SIDE CLICK AREA & ARROW */}
+    <button
+      onClick={prevPhoto}
+      className="absolute left-0 top-0 h-full w-[25%] z-20 flex items-center justify-start pl-4 outline-none group/btn"
+    >
+      <div className="size-10 sm:size-12 bg-white/70 hover:bg-white/95 backdrop-blur-sm rounded-full flex items-center justify-center border border-black/10 shadow-md transition-all opacity-0 group-hover:opacity-100 active:scale-90">
+        <ChevronLeft className="size-6 sm:size-8 text-black" strokeWidth={2.5} />
+      </div>
+    </button>
 
-        {/* Right clickable area - for next photo */}
-        {photos.length > 1 && (
-          <button
-            onClick={nextPhoto}
-            className="absolute right-0 top-0 h-full w-1/3 flex items-center justify-end pr-3 opacity-0 hover:opacity-100 transition-opacity z-20"
-            title="Next photo"
-          >
-            <div className="size-8 sm:size-10 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center transition-colors">
-              <ChevronRight className="size-5 sm:size-6 text-white" />
-            </div>
-          </button>
-        )}
+    {/* RIGHT SIDE CLICK AREA & ARROW */}
+    <button
+      onClick={nextPhoto}
+      className="absolute right-0 top-0 h-full w-[25%] z-20 flex items-center justify-end pr-4 outline-none group/btn"
+    >
+      <div className="size-10 sm:size-12 bg-white/70 hover:bg-white/95 backdrop-blur-sm rounded-full flex items-center justify-center border border-black/10 shadow-md transition-all opacity-0 group-hover:opacity-100 active:scale-90">
+        <ChevronRight className="size-6 sm:size-8 text-black" strokeWidth={2.5} />
+      </div>
+    </button>
 
-        {/* Photo Counter - only visible on hover */}
-        {photos.length > 1 && (
-          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-black/50 text-white text-xs sm:text-sm px-3 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-20">
-            {currentIndex + 1} / {photos.length}
-          </div>
-        )}
+    {/* COUNTER - PINNED TO BOTTOM MIDDLE */}
+    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 bg-white/80 backdrop-blur-md text-black text-xs font-bold px-4 py-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none border border-black/5">
+      {currentIndex + 1} / {photos.length}
+    </div>
+  </>
+)}
       </div>
 
-      {/* Thumbnails - Fixed sizes */}
+      {/* Thumbnails Row */}
       {photos.length > 1 && (
-        <div className="flex gap-2 overflow-x-auto pb-2">
+        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
           {photos.map((photo, index) => (
             <button
               key={index}
               onClick={() => setCurrentIndex(index)}
-              className={`flex-shrink-0 w-16 h-16 rounded border-2 overflow-hidden flex items-center justify-center transition-all ${
-                index === currentIndex 
-                  ? 'border-[#155dfc]' 
-                  : 'border-[#e2e8f0] hover:border-[#155dfc]/50'
+              className={`flex-shrink-0 w-16 h-16 rounded-md border-2 overflow-hidden flex items-center justify-center transition-all ${
+                index === currentIndex ? 'border-[#155dfc]' : 'border-[#e2e8f0]'
               }`}
-              title={`Photo ${index + 1}`}
             >
-              <img 
-                src={photo} 
-                alt={`Thumbnail ${index + 1}`}
-                className="w-full h-full object-contain"
-              />
+              <img src={photo} className="w-full h-full object-cover" alt="thumb" />
             </button>
           ))}
         </div>

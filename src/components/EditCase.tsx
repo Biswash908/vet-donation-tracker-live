@@ -35,6 +35,7 @@ export default function EditCase({ petId, onBack }: EditCaseProps) {
   });
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
+  const [photoPreviewUrls, setPhotoPreviewUrls] = useState<string[]>([]);
   const [originalPhotoUrls, setOriginalPhotoUrls] = useState<string[]>([]);
   const [invoiceFiles, setInvoiceFiles] = useState<File[]>([]);
   const [existingInvoiceUrls, setExistingInvoiceUrls] = useState<string[]>([]);
@@ -114,7 +115,7 @@ export default function EditCase({ petId, onBack }: EditCaseProps) {
         editedCase.pet_story !== (pet.pet_story || '') ||
         editedCase.instagram_link !== (pet.instagram_link || '') ||
         editedCase.status !== pet.status ||
-        photoFile !== null ||
+        photoFiles !== null ||
         invoiceFiles.length > 0 ||
         JSON.stringify(existingInvoiceUrls) !== JSON.stringify(originalInvoiceUrls);
       if (changed) e.preventDefault();
@@ -171,77 +172,66 @@ export default function EditCase({ petId, onBack }: EditCaseProps) {
   };
 
   const handleSave = async () => {
-    if (!editedCase.animal_name || !editedCase.medical_condition || !editedCase.estimated_cost) {
-      alert('Please fill in all required fields');
-      return;
-    }
+  if (!editedCase.animal_name || !editedCase.medical_condition || !editedCase.estimated_cost) {
+    alert('Please fill in all required fields');
+    return;
+  }
 
-    setIsSaving(true);
-    try {
-      let updates: any = {
-        animal_name: editedCase.animal_name,
-        medical_condition: editedCase.medical_condition,
-        estimated_cost: parseFloat(editedCase.estimated_cost),
-        payment_link: editedCase.payment_link,
-        pet_story: editedCase.pet_story,
-        instagram_link: editedCase.instagram_link,
-        status: editedCase.status as any
-      };
+  setIsSaving(true);
+  try {
+    let updates: any = {
+      animal_name: editedCase.animal_name,
+      medical_condition: editedCase.medical_condition,
+      estimated_cost: parseFloat(editedCase.estimated_cost),
+      payment_link: editedCase.payment_link,
+      pet_story: editedCase.pet_story,
+      instagram_link: editedCase.instagram_link,
+      status: editedCase.status as any
+    };
 
-      // Upload new photos if provided
-      const newPhotoUrls: string[] = [];
+    // 1. FILTER: Keep only existing remote URLs from the preview list
+    // This removes any Base64 strings (data:...) from the array we send to the DB
+    const existingRemoteUrls = photoUrls.filter(url => url.startsWith('http'));
+
+    // 2. UPLOAD: Process the actual File objects
+    const newPhotoUrls: string[] = [];
+    if (photoFiles.length > 0) {
       for (const file of photoFiles) {
         const timestamp = Date.now();
         const photoPath = `pet-photos/${timestamp}-${file.name}`;
         const photoUrl = await uploadFileToStorage(file, 'pet-images', photoPath);
         
         if (!photoUrl) {
-          alert('Failed to upload photo. Please try again.');
-          setIsSaving(false);
-          return;
+          throw new Error(`Failed to upload ${file.name}`);
         }
         newPhotoUrls.push(photoUrl);
-        console.log('[v0] Uploaded photo:', photoUrl);
       }
-      
-      const allPhotoUrls = [...photoUrls, ...newPhotoUrls];
-      console.log('[v0] All photo URLs before save:', allPhotoUrls);
-      updates.pet_photo = allPhotoUrls.length > 0 ? JSON.stringify(allPhotoUrls) : null;
-
-      // Upload new invoice files and combine with existing
-      const newInvoiceUrls: string[] = [];
-      for (const file of invoiceFiles) {
-        const timestamp = Date.now();
-        const invoicePath = `invoices/${timestamp}-${file.name}`;
-        const invoiceUrl = await uploadFileToStorage(file, 'pet-invoices', invoicePath);
-        
-        if (!invoiceUrl) {
-          alert(`Failed to upload ${file.name}. Please try again.`);
-          setIsSaving(false);
-          return;
-        }
-        newInvoiceUrls.push(invoiceUrl);
-        console.log('[v0] Uploaded invoice:', invoiceUrl);
-      }
-      
-      const allUrls = [...existingInvoiceUrls, ...newInvoiceUrls];
-      console.log('[v0] All invoice URLs before save:', allUrls);
-      console.log('[v0] Invoice file stringified:', allUrls.length > 0 ? JSON.stringify(allUrls) : null);
-      updates.invoice_file = allUrls.length > 0 ? JSON.stringify(allUrls) : null;
-
-      await updateInvoice(petId, updates);
-      alert('Case saved successfully!');
-      setPhotoFiles([]);
-      setPhotoUrls(allPhotoUrls);
-      setInvoiceFiles([]);
-      onBack();
-    } catch (error) {
-      console.error('Error saving case:', error);
-      alert('Failed to save case. Please try again.');
-    } finally {
-      setIsSaving(false);
     }
-  };
+    
+    // 3. COMBINE: Merge existing hosted URLs with the new ones just uploaded
+    const finalPhotoUrls = [...existingRemoteUrls, ...newPhotoUrls];
+    
+    // Update pet_photo only with clean URLs
+    updates.pet_photo = finalPhotoUrls.length > 0 ? JSON.stringify(finalPhotoUrls) : null;
+
+    // ... Handle Invoices (same logic: filter existing vs new) ...
+    const finalInvoiceUrls = [...existingInvoiceUrls]; // Add logic here if you want to upload new invoices too
+    updates.invoice_file = finalInvoiceUrls.length > 0 ? JSON.stringify(finalInvoiceUrls) : null;
+
+    await updateInvoice(petId, updates);
+    
+    alert('Case saved successfully!');
+    setPhotoFiles([]);
+    setPhotoUrls(finalPhotoUrls);
+    setOriginalPhotoUrls(finalPhotoUrls);
+    onBack();
+  } catch (error: any) {
+    console.error('Error saving case:', error);
+    alert(`Failed to save: ${error.message || 'Unknown error'}`);
+  } finally {
+    setIsSaving(false);
+  }
+};
 
   const handleDelete = async () => {
     if (confirm(`Are you sure you want to delete ${pet.animal_name}'s case? This action cannot be undone.`)) {
@@ -379,14 +369,39 @@ export default function EditCase({ petId, onBack }: EditCaseProps) {
 
           {/* 2. Pet Photos */}
           <MultiPhotoUpload
-            photos={photoUrls}
-            onUpload={(files) => {
-              setPhotoFiles([...photoFiles, ...files]);
-            }}
-            onRemove={(index) => {
-              setPhotoUrls(photoUrls.filter((_, i) => i !== index));
-            }}
-          />
+  photos={photoUrls}
+  onUpload={(files) => {
+    // Keep the actual files for the upload process
+    setPhotoFiles(prev => [...prev, ...files]);
+    
+    // Create previews for the UI
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        if (e.target?.result) {
+          setPhotoUrls(prev => [...prev, e.target.result as string]);
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+  }}
+  onRemove={(index) => {
+    const urlToRemove = photoUrls[index];
+
+    // If we are removing a "new" unsaved photo (Base64)
+    if (urlToRemove.startsWith('data:')) {
+      // Find its position relative to other new photos to remove from photoFiles
+      const newPhotosBeforeThisOne = photoUrls
+        .slice(0, index)
+        .filter(url => url.startsWith('data:')).length;
+        
+      setPhotoFiles(prev => prev.filter((_, i) => i !== newPhotosBeforeThisOne));
+    }
+
+    // Remove from the preview list
+    setPhotoUrls(prev => prev.filter((_, i) => i !== index));
+  }}
+/>
 
           {/* 3. Pet's Story */}
           <Card className="bg-white border-[#e2e8f0]">
@@ -953,23 +968,39 @@ export default function EditCase({ petId, onBack }: EditCaseProps) {
           <div className="space-y-6">
             {/* Pet Photos */}
             <MultiPhotoUpload
-              photos={photoUrls}
-              onUpload={(files) => {
-                setPhotoFiles([...photoFiles, ...files]);
-                files.forEach(file => {
-                  const reader = new FileReader();
-                  reader.onload = (e) => {
-                    if (e.target?.result) {
-                      setPhotoUrls(prev => [...prev, e.target.result as string]);
-                    }
-                  };
-                  reader.readAsDataURL(file);
-                });
-              }}
-              onRemove={(index) => {
-                setPhotoUrls(photoUrls.filter((_, i) => i !== index));
-              }}
-            />
+  photos={photoUrls}
+  onUpload={(files) => {
+    // Keep the actual files for the upload process
+    setPhotoFiles(prev => [...prev, ...files]);
+    
+    // Create previews for the UI
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        if (e.target?.result) {
+          setPhotoUrls(prev => [...prev, e.target.result as string]);
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+  }}
+  onRemove={(index) => {
+    const urlToRemove = photoUrls[index];
+
+    // If we are removing a "new" unsaved photo (Base64)
+    if (urlToRemove.startsWith('data:')) {
+      // Find its position relative to other new photos to remove from photoFiles
+      const newPhotosBeforeThisOne = photoUrls
+        .slice(0, index)
+        .filter(url => url.startsWith('data:')).length;
+        
+      setPhotoFiles(prev => prev.filter((_, i) => i !== newPhotosBeforeThisOne));
+    }
+
+    // Remove from the preview list
+    setPhotoUrls(prev => prev.filter((_, i) => i !== index));
+  }}
+/>
 
             {/* Financial Summary */}
             <Card className="bg-white border-[#e2e8f0]">

@@ -1,4 +1,4 @@
-import { Upload, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Upload, X } from 'lucide-react';
 import { Button } from './ui/button';
 import { useState } from 'react';
 
@@ -18,6 +18,7 @@ export default function MultiPhotoUpload({
   profilePhotoIndex = 0
 }: MultiPhotoUploadProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -38,99 +39,91 @@ export default function MultiPhotoUpload({
     }
   };
 
+  // Swipe logic
+  const handleTouchStart = (e: React.TouchEvent) => setTouchStart(e.targetTouches[0].clientX);
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStart === null) return;
+    const touchEnd = e.changedTouches[0].clientX;
+    const distance = touchStart - touchEnd;
+    
+    if (distance > 50) nextPhoto();      // Swipe Left to go Next
+    if (distance < -50) prevPhoto();     // Swipe Right to go Back
+    setTouchStart(null);
+  };
+
   const currentPhoto = photos[currentIndex];
 
   return (
-    <div className="bg-white border border-[#e2e8f0] rounded-lg p-5 shadow-sm">
-      {/* Heading */}
-      <h3 className="text-lg font-semibold text-[#0f172b] mb-4">
-        Pet Photos
-      </h3>
+    <div className="space-y-4">
+      {/* Main Preview Area */}
+      <div 
+        className="relative w-full bg-slate-100 rounded-xl overflow-hidden group flex items-center justify-center"
+        style={{ height: '600px' }}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
+        {photos.length > 0 ? (
+          <>
+            <img 
+              src={currentPhoto} 
+              alt="Preview" 
+              className="h-full w-auto object-contain select-none pointer-events-none"
+            />
+            
+            {/* Delete Button (Only visible element) */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onRemove(currentIndex);
+                if (currentIndex >= photos.length - 1 && currentIndex > 0) {
+                  setCurrentIndex(currentIndex - 1);
+                }
+              }}
+              className="absolute top-4 right-4 z-50 size-10 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow-lg transition-transform active:scale-90"
+              title="Remove this photo"
+            >
+              <X className="size-6" strokeWidth={3} />
+            </button>
 
-      {/* Photo Preview Container */}
-      <div className="flex justify-center mb-5">
-        <div className="relative w-48 aspect-square bg-[#f1f5f9] rounded-lg overflow-hidden border border-[#e2e8f0] flex items-center justify-center">
-          {currentPhoto ? (
-            <>
-              <img 
-                src={currentPhoto} 
-                alt={`Pet photo ${currentIndex + 1}`}
-                className="w-full h-full object-contain"
-              />
-              
-              {/* Navigation arrows - only show if multiple photos */}
-              {photos.length > 1 && (
-                <>
-                  <button
-                    onClick={prevPhoto}
-                    className="absolute left-2 top-1/2 -translate-y-1/2 size-7 bg-black/50 rounded-full flex items-center justify-center hover:bg-black/70 transition-colors"
-                    title="Previous photo"
-                  >
-                    <ChevronLeft className="size-4 text-white" />
-                  </button>
-                  <button
-                    onClick={nextPhoto}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 size-7 bg-black/50 rounded-full flex items-center justify-center hover:bg-black/70 transition-colors"
-                    title="Next photo"
-                  >
-                    <ChevronRight className="size-4 text-white" />
-                  </button>
-                </>
-              )}
+            {/* COMPLETELY INVISIBLE NAVIGATION ZONES */}
+            {photos.length > 1 && (
+              <div className="absolute inset-0 flex z-40">
+                {/* Left Half Click Zone */}
+                <div
+                  onClick={(e) => { e.stopPropagation(); prevPhoto(); }}
+                  className="h-full w-1/2 cursor-pointer"
+                  aria-label="Previous photo"
+                />
 
-              {/* Remove Button - Red X in top right */}
-              <button
-                onClick={() => {
-                  onRemove(currentIndex);
-                  if (photos.length > 1) {
-                    setCurrentIndex(0);
-                  }
-                }}
-                className="absolute top-2 right-2 size-7 bg-[#ef4444] rounded-full flex items-center justify-center hover:bg-[#dc2626] transition-colors shadow-md"
-                title="Delete photo"
-              >
-                <X className="size-4 text-white" strokeWidth={3} />
-              </button>
-
-              {/* Photo Counter */}
-              {photos.length > 1 && (
-                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/50 text-white text-xs px-2 py-1 rounded-full">
-                  {currentIndex + 1} / {photos.length}
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-[#64748b] text-sm text-center px-4">
-              No photos uploaded
-            </div>
-          )}
-        </div>
+                {/* Right Half Click Zone */}
+                <div
+                  onClick={(e) => { e.stopPropagation(); nextPhoto(); }}
+                  className="h-full w-1/2 cursor-pointer"
+                  aria-label="Next photo"
+                />
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="flex flex-col items-center justify-center text-slate-400">
+            <Upload className="size-12 mb-2 opacity-20" />
+            <p>No photos uploaded yet</p>
+          </div>
+        )}
       </div>
 
-      {/* Photo Thumbnails */}
+      {/* Thumbnails Row */}
       {photos.length > 1 && (
-        <div className="mb-5 flex gap-2 overflow-x-auto pb-2">
+        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
           {photos.map((photo, index) => (
             <button
               key={index}
               onClick={() => setCurrentIndex(index)}
-              className={`flex-shrink-0 relative w-16 h-16 rounded border-2 overflow-hidden transition-all ${
-                index === currentIndex 
-                  ? 'border-[#155dfc]' 
-                  : 'border-[#e2e8f0] hover:border-[#155dfc]/50'
+              className={`relative flex-shrink-0 w-16 h-16 rounded-md border-2 overflow-hidden transition-all ${
+                index === currentIndex ? 'border-[#155dfc] ring-2 ring-[#155dfc]/20' : 'border-slate-200'
               }`}
-              title={`Photo ${index + 1}${index === profilePhotoIndex ? ' (Profile)' : ''}`}
             >
-              <img 
-                src={photo} 
-                alt={`Thumbnail ${index + 1}`}
-                className="w-full h-full object-contain"
-              />
-              {index === profilePhotoIndex && (
-                <div className="absolute top-0 right-0 bg-[#155dfc] text-white text-[9px] px-1.5 py-0.5 rounded-bl whitespace-nowrap">
-                  P
-                </div>
-              )}
+              <img src={photo} className="w-full h-full object-cover" alt="thumbnail" />
             </button>
           ))}
         </div>
@@ -138,31 +131,18 @@ export default function MultiPhotoUpload({
 
       {/* Upload Button */}
       <label className="cursor-pointer block">
-        <input
-          type="file"
-          multiple
-          accept="image/*"
-          onChange={handlePhotoUpload}
-          className="hidden"
-        />
+        <input type="file" multiple accept="image/*" onChange={handlePhotoUpload} className="hidden" />
         <Button
           variant="outline"
-          className="w-full gap-2 border-[#e2e8f0] bg-white hover:bg-[#f8fafc] h-10 text-[#0f172b] font-medium cursor-pointer"
-          onClick={(e) => {
-            e.currentTarget.parentElement?.querySelector('input')?.click();
-          }}
+          asChild
+          className="w-full gap-2 border-[#e2e8f0] bg-white hover:bg-[#f8fafc] h-11 text-[#0f172b] font-medium shadow-sm"
         >
-          <Upload className="size-4" />
-          <span className="text-sm">
+          <div onClick={(e) => e.currentTarget.parentElement?.querySelector('input')?.click()}>
+            <Upload className="size-4" />
             {photos.length === 0 ? 'Upload Photos' : 'Add More Photos'}
-          </span>
+          </div>
         </Button>
       </label>
-
-      {/* Helper text */}
-      <p className="text-xs text-[#64748b] mt-2">
-        First photo will be used as the profile picture. You can swipe through photos on the pet details page.
-      </p>
     </div>
   );
 }
