@@ -57,36 +57,36 @@ export default function EditCase({ petId, onBack }: EditCaseProps) {
             status: data.status
           });
           setDonations(data.donations || []);
-          
+
           // Parse existing photo URLs (can be JSON array or single URL)
           const photoUrls = data.pet_photo
             ? (() => {
-                try {
-                  const parsed = JSON.parse(data.pet_photo);
-                  console.log('[v0] Parsed photos:', parsed);
-                  return Array.isArray(parsed) ? parsed : [data.pet_photo];
-                } catch {
-                  console.log('[v0] Failed to parse photos, using raw:', data.pet_photo);
-                  return [data.pet_photo];
-                }
-              })()
+              try {
+                const parsed = JSON.parse(data.pet_photo);
+                console.log('[v0] Parsed photos:', parsed);
+                return Array.isArray(parsed) ? parsed : [data.pet_photo];
+              } catch {
+                console.log('[v0] Failed to parse photos, using raw:', data.pet_photo);
+                return [data.pet_photo];
+              }
+            })()
             : [];
           console.log('[v0] Setting existing photo URLs:', photoUrls);
           setPhotoUrls(photoUrls);
           setOriginalPhotoUrls(photoUrls);
-          
+
           // Parse existing invoice URLs (can be JSON array or single URL)
           const urls = data.invoice_file
             ? (() => {
-                try {
-                  const parsed = JSON.parse(data.invoice_file);
-                  console.log('[v0] Parsed invoices:', parsed);
-                  return Array.isArray(parsed) ? parsed : [data.invoice_file];
-                } catch {
-                  console.log('[v0] Failed to parse, using raw:', data.invoice_file);
-                  return [data.invoice_file];
-                }
-              })()
+              try {
+                const parsed = JSON.parse(data.invoice_file);
+                console.log('[v0] Parsed invoices:', parsed);
+                return Array.isArray(parsed) ? parsed : [data.invoice_file];
+              } catch {
+                console.log('[v0] Failed to parse, using raw:', data.invoice_file);
+                return [data.invoice_file];
+              }
+            })()
             : [];
           console.log('[v0] Setting existing invoice URLs:', urls);
           setExistingInvoiceUrls(urls);
@@ -123,7 +123,7 @@ export default function EditCase({ petId, onBack }: EditCaseProps) {
     window.addEventListener('beforeunload', handler);
     return () => window.removeEventListener('beforeunload', handler);
   }, [pet, editedCase, photoFiles, photoUrls, invoiceFiles, existingInvoiceUrls, originalInvoiceUrls]);
-  
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white p-8">
@@ -172,66 +172,66 @@ export default function EditCase({ petId, onBack }: EditCaseProps) {
   };
 
   const handleSave = async () => {
-  if (!editedCase.animal_name || !editedCase.medical_condition || !editedCase.estimated_cost) {
-    alert('Please fill in all required fields');
-    return;
-  }
-
-  setIsSaving(true);
-  try {
-    let updates: any = {
-      animal_name: editedCase.animal_name,
-      medical_condition: editedCase.medical_condition,
-      estimated_cost: parseFloat(editedCase.estimated_cost),
-      payment_link: editedCase.payment_link,
-      pet_story: editedCase.pet_story,
-      instagram_link: editedCase.instagram_link,
-      status: editedCase.status as any
-    };
-
-    // 1. FILTER: Keep only existing remote URLs from the preview list
-    // This removes any Base64 strings (data:...) from the array we send to the DB
-    const existingRemoteUrls = photoUrls.filter(url => url.startsWith('http'));
-
-    // 2. UPLOAD: Process the actual File objects
-    const newPhotoUrls: string[] = [];
-    if (photoFiles.length > 0) {
-      for (const file of photoFiles) {
-        const timestamp = Date.now();
-        const photoPath = `pet-photos/${timestamp}-${file.name}`;
-        const photoUrl = await uploadFileToStorage(file, 'pet-images', photoPath);
-        
-        if (!photoUrl) {
-          throw new Error(`Failed to upload ${file.name}`);
-        }
-        newPhotoUrls.push(photoUrl);
-      }
+    if (!editedCase.animal_name || !editedCase.medical_condition || !editedCase.estimated_cost) {
+      alert('Please fill in all required fields');
+      return;
     }
-    
-    // 3. COMBINE: Merge existing hosted URLs with the new ones just uploaded
-    const finalPhotoUrls = [...existingRemoteUrls, ...newPhotoUrls];
-    
-    // Update pet_photo only with clean URLs
-    updates.pet_photo = finalPhotoUrls.length > 0 ? JSON.stringify(finalPhotoUrls) : null;
 
-    // ... Handle Invoices (same logic: filter existing vs new) ...
-    const finalInvoiceUrls = [...existingInvoiceUrls]; // Add logic here if you want to upload new invoices too
-    updates.invoice_file = finalInvoiceUrls.length > 0 ? JSON.stringify(finalInvoiceUrls) : null;
+    setIsSaving(true);
+    try {
+      let updates: any = {
+        animal_name: editedCase.animal_name,
+        medical_condition: editedCase.medical_condition,
+        estimated_cost: parseFloat(editedCase.estimated_cost),
+        payment_link: editedCase.payment_link,
+        pet_story: editedCase.pet_story,
+        instagram_link: editedCase.instagram_link,
+        status: editedCase.status as any
+      };
 
-    await updateInvoice(petId, updates);
-    
-    alert('Case saved successfully!');
-    setPhotoFiles([]);
-    setPhotoUrls(finalPhotoUrls);
-    setOriginalPhotoUrls(finalPhotoUrls);
-    onBack();
-  } catch (error: any) {
-    console.error('Error saving case:', error);
-    alert(`Failed to save: ${error.message || 'Unknown error'}`);
-  } finally {
-    setIsSaving(false);
-  }
-};
+      // 1. FILTER: Keep only existing remote URLs from the preview list
+      // This removes any Base64 strings (data:...) from the array we send to the DB
+      const existingRemoteUrls = photoUrls.filter(url => url.startsWith('http'));
+
+      // 2. UPLOAD: Process the actual File objects
+      const newPhotoUrls: string[] = [];
+      if (photoFiles.length > 0) {
+        for (const file of photoFiles) {
+          const timestamp = Date.now();
+          const photoPath = `pet-photos/${timestamp}-${file.name}`;
+          const photoUrl = await uploadFileToStorage(file, 'pet-images', photoPath);
+
+          if (!photoUrl) {
+            throw new Error(`Failed to upload ${file.name}`);
+          }
+          newPhotoUrls.push(photoUrl);
+        }
+      }
+
+      // 3. COMBINE: Merge existing hosted URLs with the new ones just uploaded
+      const finalPhotoUrls = [...existingRemoteUrls, ...newPhotoUrls];
+
+      // Update pet_photo only with clean URLs
+      updates.pet_photo = finalPhotoUrls.length > 0 ? JSON.stringify(finalPhotoUrls) : null;
+
+      // ... Handle Invoices (same logic: filter existing vs new) ...
+      const finalInvoiceUrls = [...existingInvoiceUrls]; // Add logic here if you want to upload new invoices too
+      updates.invoice_file = finalInvoiceUrls.length > 0 ? JSON.stringify(finalInvoiceUrls) : null;
+
+      await updateInvoice(petId, updates);
+
+      alert('Case saved successfully!');
+      setPhotoFiles([]);
+      setPhotoUrls(finalPhotoUrls);
+      setOriginalPhotoUrls(finalPhotoUrls);
+      onBack();
+    } catch (error: any) {
+      console.error('Error saving case:', error);
+      alert(`Failed to save: ${error.message || 'Unknown error'}`);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const handleDelete = async () => {
     if (confirm(`Are you sure you want to delete ${pet.animal_name}'s case? This action cannot be undone.`)) {
@@ -294,7 +294,7 @@ export default function EditCase({ petId, onBack }: EditCaseProps) {
       <header className="bg-white border-b border-[#e2e8f0] shadow-sm">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center gap-3">
-            <Button 
+            <Button
               onClick={handleBack}
               variant="ghost"
               size="sm"
@@ -368,40 +368,38 @@ export default function EditCase({ petId, onBack }: EditCaseProps) {
           </Card>
 
           {/* 2. Pet Photos */}
-          <MultiPhotoUpload
-  photos={photoUrls}
-  onUpload={(files) => {
-    // Keep the actual files for the upload process
-    setPhotoFiles(prev => [...prev, ...files]);
-    
-    // Create previews for the UI
-    files.forEach(file => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        if (e.target?.result) {
-          setPhotoUrls(prev => [...prev, e.target.result as string]);
-        }
-      };
-      reader.readAsDataURL(file);
-    });
-  }}
-  onRemove={(index) => {
-    const urlToRemove = photoUrls[index];
-
-    // If we are removing a "new" unsaved photo (Base64)
-    if (urlToRemove.startsWith('data:')) {
-      // Find its position relative to other new photos to remove from photoFiles
-      const newPhotosBeforeThisOne = photoUrls
-        .slice(0, index)
-        .filter(url => url.startsWith('data:')).length;
-        
-      setPhotoFiles(prev => prev.filter((_, i) => i !== newPhotosBeforeThisOne));
-    }
-
-    // Remove from the preview list
-    setPhotoUrls(prev => prev.filter((_, i) => i !== index));
-  }}
-/>
+          <div className="bg-white border border-[#e2e8f0] rounded-[10px] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)] overflow-hidden min-w-0">
+            <div className="px-4 pt-3 pb-0">
+              <h3 className="text-base font-semibold text-[#0f172b]">Pet Photos</h3>
+            </div>
+            <div className="px-4 py-2">
+              <MultiPhotoUpload
+                photos={photoUrls}
+                onUpload={(files) => {
+                  setPhotoFiles(prev => [...prev, ...files]);
+                  files.forEach(file => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                      if (e.target?.result) {
+                        setPhotoUrls(prev => [...prev, e.target.result as string]);
+                      }
+                    };
+                    reader.readAsDataURL(file);
+                  });
+                }}
+                onRemove={(index) => {
+                  const urlToRemove = photoUrls[index];
+                  if (urlToRemove.startsWith('data:')) {
+                    const newPhotosBeforeThisOne = photoUrls
+                      .slice(0, index)
+                      .filter(url => url.startsWith('data:')).length;
+                    setPhotoFiles(prev => prev.filter((_, i) => i !== newPhotosBeforeThisOne));
+                  }
+                  setPhotoUrls(prev => prev.filter((_, i) => i !== index));
+                }}
+              />
+            </div>
+          </div>
 
           {/* 3. Pet's Story */}
           <Card className="bg-white border-[#e2e8f0]">
@@ -427,7 +425,7 @@ export default function EditCase({ petId, onBack }: EditCaseProps) {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg">Donations</CardTitle>
-                <Button 
+                <Button
                   onClick={() => setShowDonationForm(!showDonationForm)}
                   size="sm"
                   className="bg-[#155dfc] hover:bg-[#1447e6] gap-2"
@@ -441,22 +439,22 @@ export default function EditCase({ petId, onBack }: EditCaseProps) {
               {showDonationForm && (
                 <div className="bg-[#f8fafc] border border-[#e2e8f0] rounded-lg p-4 mb-4">
                   <h4 className="text-lg font-medium text-[#0f172b] mb-4">Log New Donation</h4>
-                    <div className="space-y-3">
-                      <div className="space-y-2">
-                        <Label htmlFor="donation-amount">Donation Amount *</Label>
-                        <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#555555] font-medium">AED</span>
-                          <Input
-                            id="donation-amount"
-                            type="number"
-                            step="0.01"
-                            placeholder="0.00"
-                            value={newDonation.amount}
-                            onChange={(e) => setNewDonation({ ...newDonation, amount: e.target.value })}
-                            className="pl-11 bg-[#f6f6f6] border-[#e5e5e5]"
-                          />
-                        </div>
+                  <div className="space-y-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="donation-amount">Donation Amount *</Label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#555555] font-medium">AED</span>
+                        <Input
+                          id="donation-amount"
+                          type="number"
+                          step="0.01"
+                          placeholder="0.00"
+                          value={newDonation.amount}
+                          onChange={(e) => setNewDonation({ ...newDonation, amount: e.target.value })}
+                          className="pl-11 bg-[#f6f6f6] border-[#e5e5e5]"
+                        />
                       </div>
+                    </div>
 
                     <div className="space-y-2">
                       <Label htmlFor="donor-name">Donor Name (Optional)</Label>
@@ -470,14 +468,14 @@ export default function EditCase({ petId, onBack }: EditCaseProps) {
                     </div>
 
                     <div className="flex gap-2 pt-2">
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         onClick={() => setShowDonationForm(false)}
                         className="flex-1"
                       >
                         Cancel
                       </Button>
-                      <Button 
+                      <Button
                         onClick={handleAddDonation}
                         className="flex-1 bg-[#4e95ff] hover:bg-[#3b82f6]"
                       >
@@ -490,7 +488,7 @@ export default function EditCase({ petId, onBack }: EditCaseProps) {
 
               <div className="space-y-3">
                 {donations.map((donation) => (
-                  <div 
+                  <div
                     key={donation.id}
                     className="flex items-center justify-between p-3 border border-[#e2e8f0] rounded-lg"
                   >
@@ -517,7 +515,7 @@ export default function EditCase({ petId, onBack }: EditCaseProps) {
                     </div>
                   </div>
                 ))}
-                
+
                 {donations.length === 0 && !showDonationForm && (
                   <p className="text-sm text-[#64748b] text-center py-4">
                     No donations yet. Click "Log New Donation" to add one.
@@ -657,7 +655,7 @@ export default function EditCase({ petId, onBack }: EditCaseProps) {
 
           {/* 7. Action Buttons */}
           <div className="space-y-3">
-            <Button 
+            <Button
               onClick={handleSave}
               className="w-full bg-[#155dfc] hover:bg-[#1447e6] h-11 gap-2"
               disabled={isSaving || isDeleting}
@@ -674,7 +672,7 @@ export default function EditCase({ petId, onBack }: EditCaseProps) {
                 </>
               )}
             </Button>
-            <Button 
+            <Button
               onClick={handleDelete}
               className="w-full bg-red-600 hover:bg-red-700 text-white h-11 gap-2"
               disabled={isSaving || isDeleting}
@@ -772,7 +770,7 @@ export default function EditCase({ petId, onBack }: EditCaseProps) {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-xl">Donations</CardTitle>
-                  <Button 
+                  <Button
                     onClick={() => setShowDonationForm(!showDonationForm)}
                     size="sm"
                     className="bg-[#155dfc] hover:bg-[#1447e6] gap-2"
@@ -815,14 +813,14 @@ export default function EditCase({ petId, onBack }: EditCaseProps) {
                       </div>
 
                       <div className="flex gap-2 pt-2">
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           onClick={() => setShowDonationForm(false)}
                           className="flex-1"
                         >
                           Cancel
                         </Button>
-                        <Button 
+                        <Button
                           onClick={handleAddDonation}
                           className="flex-1 bg-[#4e95ff] hover:bg-[#3b82f6]"
                         >
@@ -835,7 +833,7 @@ export default function EditCase({ petId, onBack }: EditCaseProps) {
 
                 <div className="space-y-3">
                   {donations.map((donation) => (
-                    <div 
+                    <div
                       key={donation.id}
                       className="flex items-center justify-between p-3 border border-[#e2e8f0] rounded-lg"
                     >
@@ -862,7 +860,7 @@ export default function EditCase({ petId, onBack }: EditCaseProps) {
                       </div>
                     </div>
                   ))}
-                  
+
                   {donations.length === 0 && !showDonationForm && (
                     <p className="text-sm text-[#64748b] text-center py-4">
                       No donations yet. Click "Log New Donation" to add one.
@@ -967,40 +965,38 @@ export default function EditCase({ petId, onBack }: EditCaseProps) {
           {/* Right Column - Pet Photos & Summary */}
           <div className="space-y-6">
             {/* Pet Photos */}
-            <MultiPhotoUpload
-  photos={photoUrls}
-  onUpload={(files) => {
-    // Keep the actual files for the upload process
-    setPhotoFiles(prev => [...prev, ...files]);
-    
-    // Create previews for the UI
-    files.forEach(file => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        if (e.target?.result) {
-          setPhotoUrls(prev => [...prev, e.target.result as string]);
-        }
-      };
-      reader.readAsDataURL(file);
-    });
-  }}
-  onRemove={(index) => {
-    const urlToRemove = photoUrls[index];
-
-    // If we are removing a "new" unsaved photo (Base64)
-    if (urlToRemove.startsWith('data:')) {
-      // Find its position relative to other new photos to remove from photoFiles
-      const newPhotosBeforeThisOne = photoUrls
-        .slice(0, index)
-        .filter(url => url.startsWith('data:')).length;
-        
-      setPhotoFiles(prev => prev.filter((_, i) => i !== newPhotosBeforeThisOne));
-    }
-
-    // Remove from the preview list
-    setPhotoUrls(prev => prev.filter((_, i) => i !== index));
-  }}
-/>
+            <div className="bg-white border border-[#e2e8f0] rounded-[10px] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)] overflow-hidden min-w-0">
+              <div className="px-4 pt-3 pb-0">
+                <h3 className="text-lg font-semibold text-[#0f172b]">Pet Photos</h3>
+              </div>
+              <div className="px-4 py-2">
+                <MultiPhotoUpload
+                  photos={photoUrls}
+                  onUpload={(files) => {
+                    setPhotoFiles(prev => [...prev, ...files]);
+                    files.forEach(file => {
+                      const reader = new FileReader();
+                      reader.onload = (e) => {
+                        if (e.target?.result) {
+                          setPhotoUrls(prev => [...prev, e.target.result as string]);
+                        }
+                      };
+                      reader.readAsDataURL(file);
+                    });
+                  }}
+                  onRemove={(index) => {
+                    const urlToRemove = photoUrls[index];
+                    if (urlToRemove.startsWith('data:')) {
+                      const newPhotosBeforeThisOne = photoUrls
+                        .slice(0, index)
+                        .filter(url => url.startsWith('data:')).length;
+                      setPhotoFiles(prev => prev.filter((_, i) => i !== newPhotosBeforeThisOne));
+                    }
+                    setPhotoUrls(prev => prev.filter((_, i) => i !== index));
+                  }}
+                />
+              </div>
+            </div>
 
             {/* Financial Summary */}
             <Card className="bg-white border-[#e2e8f0]">
@@ -1041,7 +1037,7 @@ export default function EditCase({ petId, onBack }: EditCaseProps) {
 
             {/* Action Buttons */}
             <div className="space-y-3">
-              <Button 
+              <Button
                 onClick={handleSave}
                 className="w-full bg-[#155dfc] hover:bg-[#1447e6] h-11 gap-2"
                 disabled={isSaving || isDeleting}
@@ -1058,7 +1054,7 @@ export default function EditCase({ petId, onBack }: EditCaseProps) {
                   </>
                 )}
               </Button>
-              <Button 
+              <Button
                 onClick={handleDelete}
                 className="w-full bg-red-600 hover:bg-red-700 text-white h-11 gap-2"
                 disabled={isSaving || isDeleting}

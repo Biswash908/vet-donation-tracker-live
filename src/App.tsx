@@ -35,56 +35,64 @@ export default function App() {
     setRefreshKey(prev => prev + 1);
   };
 
-  if (currentView === 'admin-login') {
-    return (
-      <AdminLogin 
-        onLogin={() => setCurrentView('admin-dashboard')}
-        onBack={() => setCurrentView('home')}
-      />
-    );
-  }
+  const content = (() => {
+    if (currentView === 'admin-login') {
+      return (
+        <AdminLogin 
+          onLogin={() => setCurrentView('admin-dashboard')}
+          onBack={() => setCurrentView('home')}
+        />
+      );
+    }
 
-  if (currentView === 'admin-dashboard') {
-    return (
-      <AdminDashboard 
-        onBack={() => setCurrentView('home')} 
-        onAddNewCase={() => setCurrentView('admin-add-case')}
-        onEditCase={(petId) => {
-          setEditingPetId(petId);
-          setCurrentView('admin-edit-case');
-        }}
-      />
-    );
-  }
+    if (currentView === 'admin-dashboard') {
+      return (
+        <AdminDashboard 
+          onBack={() => setCurrentView('home')} 
+          onAddNewCase={() => setCurrentView('admin-add-case')}
+          onEditCase={(petId) => {
+            setEditingPetId(petId);
+            setCurrentView('admin-edit-case');
+          }}
+        />
+      );
+    }
 
-  if (currentView === 'admin-add-case') {
-    return <AddNewCase onBack={() => {
-      setCurrentView('admin-dashboard');
-      handleRefresh();
-    }} />;
-  }
+    if (currentView === 'admin-add-case') {
+      return <AddNewCase onBack={() => {
+        setCurrentView('admin-dashboard');
+        handleRefresh();
+      }} />;
+    }
 
-  if (currentView === 'admin-edit-case' && editingPetId) {
-    return (
-      <EditCase 
-        petId={editingPetId} 
-        onBack={() => {
-          setEditingPetId(null);
-          setCurrentView('admin-dashboard');
-          handleRefresh();
-        }}
-      />
-    );
-  }
+    if (currentView === 'admin-edit-case' && editingPetId) {
+      return (
+        <EditCase 
+          petId={editingPetId} 
+          onBack={() => {
+            setEditingPetId(null);
+            setCurrentView('admin-dashboard');
+            handleRefresh();
+          }}
+        />
+      );
+    }
 
-  if (selectedPet) {
-    return (
-      <PetDetail 
-        pet={selectedPet} 
-        onBack={() => setSelectedPetId(null)} 
-      />
-    );
-  }
+    if (selectedPet) {
+      return (
+        <PetDetail 
+          pet={selectedPet} 
+          onBack={() => setSelectedPetId(null)} 
+        />
+      );
+    }
 
-  return <Home onSelectPet={(id) => setSelectedPetId(id)} onAdminClick={() => setCurrentView('admin-login')} />;
+    return <Home onSelectPet={(id) => setSelectedPetId(id)} onAdminClick={() => setCurrentView('admin-login')} />;
+  })();
+
+  return (
+    <div className="min-h-screen w-full overflow-x-hidden">
+      {content}
+    </div>
+  );
 }

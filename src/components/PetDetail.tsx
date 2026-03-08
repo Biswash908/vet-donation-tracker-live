@@ -16,6 +16,15 @@ export default function PetDetail({ pet, onBack }: PetDetailProps) {
   const stillNeeded = pet.estimated_cost - totalDonated;
   const isFunded = totalDonated >= pet.estimated_cost;
 
+  // Use same displayStatus logic as Home page
+  let displayStatus = pet.status;
+  if (pet.status === 'pending' && totalDonated > 0) {
+    displayStatus = 'partially_funded';
+  }
+  if (totalDonated >= pet.estimated_cost) {
+    displayStatus = 'funded';
+  }
+
   // Parse pet photos - handle both single string and JSON array formats
   const getPetPhotos = (): string[] => {
     if (!pet.pet_photo) return [];
@@ -79,21 +88,41 @@ export default function PetDetail({ pet, onBack }: PetDetailProps) {
       </header>
 
       {/* Main Content */}
-      <main className="px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-12 max-w-[1536px] mx-auto">
+      <main className="px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-12 max-w-[1536px] mx-auto overflow-x-hidden">
         {/* Mobile View - Reordered */}
         <div className="lg:hidden space-y-6">
           {/* 1. Pet Header Card - Name above photo */}
-          <div className="bg-white border border-[#e2e8f0] rounded-[10px] p-6 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)]">
+          <div className="bg-white border border-[#e2e8f0] rounded-[10px] p-6 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)] overflow-hidden min-w-0">
             <div className="flex items-center justify-between gap-3 mb-4">
               <h2 className="text-[30px] text-[#0a0a0a] leading-9 flex-1 min-w-0 truncate">
                 {pet.animal_name}
               </h2>
-              <div className={`px-3 py-1 rounded-lg border border-[rgba(0,0,0,0.1)] text-xs leading-4 whitespace-nowrap flex-shrink-0 ${
-                isFunded 
-                  ? 'bg-[#dcfce7] text-[#016630]' 
-                  : 'bg-[#dbeafe] text-[#193cb8]'
-              }`}>
-                {isFunded ? 'funded' : 'partially'}
+              <div 
+                className="px-3 py-1 rounded-lg border text-xs leading-4 whitespace-nowrap flex-shrink-0 font-medium"
+                style={{
+                  borderColor:
+                    displayStatus === 'pending' ? '#fde047' :
+                    displayStatus === 'active' ? '#7dd3fc' :
+                    displayStatus === 'partially_funded' ? '#fecaca' :
+                    displayStatus === 'closed' ? '#d1d5db' :
+                    '#86efac',
+
+                  backgroundColor:
+                    displayStatus === 'pending' ? '#fef3c7' :
+                    displayStatus === 'active' ? '#dbeafe' :
+                    displayStatus === 'partially_funded' ? '#fca5a5' :
+                    displayStatus === 'closed' ? '#e5e7eb' :
+                    '#dcfce7',
+
+                  color:
+                    displayStatus === 'pending' ? '#92400e' :
+                    displayStatus === 'active' ? '#193cb8' :
+                    displayStatus === 'partially_funded' ? '#7f1d1d' :
+                    displayStatus === 'closed' ? '#374151' :
+                    '#16a34a'
+                }}
+              >
+                {displayStatus.replace('_', ' ')}
               </div>
             </div>
 
@@ -256,19 +285,39 @@ export default function PetDetail({ pet, onBack }: PetDetailProps) {
           {/* Left Column */}
           <div className="space-y-6">
             {/* Pet Header Card */}
-            <div className="bg-white border border-[#e2e8f0] rounded-[10px] p-6 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)]">
+            <div className="bg-white border border-[#e2e8f0] rounded-[10px] p-6 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)] overflow-hidden min-w-0">
               <div className="flex items-start justify-between mb-4">
                 <div>
                   <h2 className="text-[30px] text-[#0a0a0a] leading-9 mb-1">
                     {pet.animal_name}
                   </h2>
                 </div>
-                <div className={`px-2.5 py-0.5 rounded-lg border border-[rgba(0,0,0,0.1)] text-xs leading-4 ${
-                  isFunded 
-                    ? 'bg-[#dcfce7] text-[#016630]' 
-                    : 'bg-[#dbeafe] text-[#193cb8]'
-                }`}>
-                  {isFunded ? 'funded' : 'partially funded'}
+                <div 
+                  className="px-2.5 py-0.5 rounded-lg border text-xs leading-4 font-medium"
+                  style={{
+                    borderColor:
+                      displayStatus === 'pending' ? '#fde047' :
+                      displayStatus === 'active' ? '#7dd3fc' :
+                      displayStatus === 'partially_funded' ? '#fecaca' :
+                      displayStatus === 'closed' ? '#d1d5db' :
+                      '#86efac',
+
+                    backgroundColor:
+                      displayStatus === 'pending' ? '#fef3c7' :
+                      displayStatus === 'active' ? '#dbeafe' :
+                      displayStatus === 'partially_funded' ? '#fca5a5' :
+                      displayStatus === 'closed' ? '#e5e7eb' :
+                      '#dcfce7',
+
+                    color:
+                      displayStatus === 'pending' ? '#92400e' :
+                      displayStatus === 'active' ? '#193cb8' :
+                      displayStatus === 'partially_funded' ? '#7f1d1d' :
+                      displayStatus === 'closed' ? '#374151' :
+                      '#16a34a'
+                  }}
+                >
+                  {displayStatus.replace('_', ' ')}
                 </div>
               </div>
 

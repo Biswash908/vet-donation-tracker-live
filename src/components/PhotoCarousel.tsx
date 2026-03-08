@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface PhotoCarouselProps {
@@ -9,6 +9,8 @@ interface PhotoCarouselProps {
 export default function PhotoCarousel({ photos, petName }: PhotoCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [touchStart, setTouchStart] = useState<number | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const thumbnailRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
   if (!photos || photos.length === 0) {
     return (
@@ -17,6 +19,28 @@ export default function PhotoCarousel({ photos, petName }: PhotoCarouselProps) {
       </div>
     );
   }
+
+  // Scroll active thumbnail into view whenever currentIndex changes
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    const thumb = thumbnailRefs.current[currentIndex];
+    if (!container || !thumb) return;
+
+    const containerLeft = container.scrollLeft;
+    const containerRight = containerLeft + container.clientWidth;
+    const thumbLeft = thumb.offsetLeft;
+    const thumbRight = thumbLeft + thumb.offsetWidth;
+
+    if (thumbLeft < containerLeft) {
+      container.scrollTo({ left: thumbLeft - 8, behavior: 'smooth' });
+    } else if (thumbRight > containerRight) {
+      container.scrollTo({ left: thumbRight - container.clientWidth + 8, behavior: 'smooth' });
+    }
+  }, [currentIndex]);
+
+  const goTo = useCallback((index: number) => {
+    setCurrentIndex(index);
+  }, []);
 
   const nextPhoto = useCallback((e?: React.MouseEvent) => {
     e?.stopPropagation();
@@ -40,65 +64,82 @@ export default function PhotoCarousel({ photos, petName }: PhotoCarouselProps) {
   const currentPhoto = photos[currentIndex];
 
   return (
-    <div className="space-y-3">
-      {/* Main Container - Fixed 600px height */}
-      <div 
-        className="rounded-[10px] overflow-hidden relative w-full bg-slate-100 group flex items-center justify-center"
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
-        style={{ height: '600px' }} 
-      >
-        <img 
-          src={currentPhoto} 
-          alt={`${petName} photo ${currentIndex + 1}`}
-          className="h-full w-auto object-contain select-none"
-        />
-          
-        {/* Navigation Layers */}
+    <div className="space-y-3 w-full">
+      {/* Main Container with Navigation and Arrows */}
+      <div className="relative flex items-center gap-1 sm:gap-3 w-full">
         {photos.length > 1 && (
-  <>
-    {/* LEFT SIDE CLICK AREA & ARROW */}
-    <button
-      onClick={prevPhoto}
-      className="absolute left-0 top-0 h-full w-[25%] z-20 flex items-center justify-start pl-4 outline-none group/btn"
-    >
-      <div className="size-10 sm:size-12 bg-white/70 hover:bg-white/95 backdrop-blur-sm rounded-full flex items-center justify-center border border-black/10 shadow-md transition-all opacity-0 group-hover:opacity-100 active:scale-90">
-        <ChevronLeft className="size-6 sm:size-8 text-black" strokeWidth={2.5} />
-      </div>
-    </button>
+          <button
+            className="flex-shrink-0 p-1.5 sm:p-2 rounded-full bg-white border border-slate-200 shadow-md hover:bg-slate-50 transition-all active:scale-90 flex items-center justify-center"
+            onClick={prevPhoto}
+            aria-label="Previous photo"
+          >
+            <ChevronLeft className="size-4 sm:size-5 text-black" strokeWidth={2.5} />
+          </button>
+        )}
 
-    {/* RIGHT SIDE CLICK AREA & ARROW */}
-    <button
-      onClick={nextPhoto}
-      className="absolute right-0 top-0 h-full w-[25%] z-20 flex items-center justify-end pr-4 outline-none group/btn"
-    >
-      <div className="size-10 sm:size-12 bg-white/70 hover:bg-white/95 backdrop-blur-sm rounded-full flex items-center justify-center border border-black/10 shadow-md transition-all opacity-0 group-hover:opacity-100 active:scale-90">
-        <ChevronRight className="size-6 sm:size-8 text-black" strokeWidth={2.5} />
-      </div>
-    </button>
+        {/* Image Container */}
+        <div
+          className="rounded-[10px] overflow-hidden relative bg-slate-100 group flex items-center justify-center flex-1"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          style={{ height: 'clamp(250px, 50vw, 500px)' }}
+        >
+          <img
+            src={currentPhoto}
+            alt={`${petName} photo ${currentIndex + 1}`}
+            className="h-full w-auto max-w-full object-contain select-none"
+          />
 
-    {/* COUNTER - PINNED TO BOTTOM MIDDLE */}
-    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 bg-white/80 backdrop-blur-md text-black text-xs font-bold px-4 py-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none border border-black/5">
-      {currentIndex + 1} / {photos.length}
-    </div>
-  </>
-)}
+          {photos.length > 1 && (
+            <>
+              <div onClick={prevPhoto} className="absolute left-0 top-0 bottom-0 w-1/3 z-20 cursor-pointer hover:bg-black/5 transition-colors" />
+              <div onClick={nextPhoto} className="absolute right-0 top-0 bottom-0 w-1/3 z-20 cursor-pointer hover:bg-black/5 transition-colors" />
+            </>
+          )}
+
+          {photos.length > 1 && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/60 text-white text-xs font-semibold px-3 py-1.5 rounded-full pointer-events-none">
+              {currentIndex + 1} / {photos.length}
+            </div>
+          )}
+        </div>
+
+        {photos.length > 1 && (
+          <button
+            className="flex-shrink-0 p-1.5 sm:p-2 rounded-full bg-white border border-slate-200 shadow-md hover:bg-slate-50 transition-all active:scale-90 flex items-center justify-center"
+            onClick={nextPhoto}
+            aria-label="Next photo"
+          >
+            <ChevronRight className="size-4 sm:size-5 text-black" strokeWidth={2.5} />
+          </button>
+        )}
       </div>
 
-      {/* Thumbnails Row */}
+      {/* Thumbnails — outer div clips vertically, inner div scrolls horizontally */}
       {photos.length > 1 && (
-        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-          {photos.map((photo, index) => (
-            <button
-              key={index}
-              onClick={() => setCurrentIndex(index)}
-              className={`flex-shrink-0 w-16 h-16 rounded-md border-2 overflow-hidden flex items-center justify-center transition-all ${
-                index === currentIndex ? 'border-[#155dfc]' : 'border-[#e2e8f0]'
-              }`}
-            >
-              <img src={photo} className="w-full h-full object-cover" alt="thumb" />
-            </button>
-          ))}
+        <div className="border border-slate-200 rounded-lg bg-slate-50" style={{ overflow: 'hidden' }}>
+          <div
+            ref={scrollContainerRef}
+            style={{ overflowX: 'auto', overflowY: 'hidden', WebkitOverflowScrolling: 'touch' }}
+            className="p-2"
+          >
+            <div className="flex gap-2" style={{ width: 'max-content' }}>
+              {photos.map((photo, index) => (
+                <button
+                  key={index}
+                  ref={(el) => { thumbnailRefs.current[index] = el; }}
+                  onClick={() => goTo(index)}
+                  className={`flex-shrink-0 h-16 w-16 rounded-md border-2 overflow-hidden transition-all cursor-pointer ${
+                    index === currentIndex
+                      ? 'border-[#155dfc] ring-2 ring-[#155dfc]/30'
+                      : 'border-[#e2e8f0] hover:border-slate-400'
+                  }`}
+                >
+                  <img src={photo} className="w-full h-full object-cover" alt={`thumbnail ${index + 1}`} />
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -283,7 +283,7 @@ function CampaignCardDesktop({ pet, onClick }: CampaignCardProps) {
     <div 
       className="px-2.5 py-0.5 rounded-lg border text-xs leading-4 font-medium shadow-sm"
       style={{
-        borderColor: 'rgba(0,0,0,0.1)',
+        borderColor: displayStatus === 'pending' ? '#fde047' : displayStatus === 'active' ? '#7dd3fc' : displayStatus === 'partially_funded' ? '#fecaca' : displayStatus === 'closed' ? '#d1d5db' : '#86efac',
         backgroundColor: displayStatus === 'pending' ? '#fef3c7' : displayStatus === 'active' ? '#dbeafe' : displayStatus === 'partially_funded' ? '#fca5a5' : displayStatus === 'closed' ? '#e5e7eb' : '#dcfce7',
         color: displayStatus === 'pending' ? '#92400e' : displayStatus === 'active' ? '#193cb8' : displayStatus === 'partially_funded' ? '#7f1d1d' : displayStatus === 'closed' ? '#374151' : '#16a34a'
       }}
@@ -370,9 +370,9 @@ function CampaignCardMobile({ pet, onClick }: CampaignCardProps) {
 
           <div className="absolute top-0 right-0">
             <div 
-              className="px-2 py-0.5 rounded-lg border text-[10px] leading-4 font-medium shadow-sm"
+              className="px-2.5 py-0.5 rounded-lg border text-xs leading-4 font-medium shadow-sm"
               style={{
-                borderColor: 'rgba(0,0,0,0.1)',
+                borderColor: displayStatus === 'pending' ? '#fde047' : displayStatus === 'active' ? '#7dd3fc' : displayStatus === 'partially_funded' ? '#fecaca' : displayStatus === 'closed' ? '#d1d5db' : '#86efac',
                 backgroundColor: displayStatus === 'pending' ? '#fef3c7' : displayStatus === 'active' ? '#dbeafe' : displayStatus === 'partially_funded' ? '#fca5a5' : displayStatus === 'closed' ? '#e5e7eb' : '#dcfce7',
                 color: displayStatus === 'pending' ? '#92400e' : displayStatus === 'active' ? '#193cb8' : displayStatus === 'partially_funded' ? '#7f1d1d' : displayStatus === 'closed' ? '#374151' : '#16a34a'
               }}
