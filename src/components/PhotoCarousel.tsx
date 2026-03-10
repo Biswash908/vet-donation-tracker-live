@@ -97,11 +97,7 @@ export default function PhotoCarousel({ photos, petName }: PhotoCarouselProps) {
             </>
           )}
 
-          {photos.length > 1 && (
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/60 text-white text-xs font-semibold px-3 py-1.5 rounded-full pointer-events-none">
-              {currentIndex + 1} / {photos.length}
-            </div>
-          )}
+
         </div>
 
         {photos.length > 1 && (
