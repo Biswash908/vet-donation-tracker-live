@@ -79,7 +79,7 @@ export default function MultiPhotoUpload({
       {/* Preview */}
       <div
         className="relative w-full bg-slate-100 rounded-xl overflow-hidden flex items-center justify-center"
-        style={{ height: '400px' }}
+        style={{ height: '300px' }}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
@@ -147,7 +147,8 @@ export default function MultiPhotoUpload({
                   key={index}
                   ref={(el) => { thumbnailRefs.current[index] = el; }}
                   onClick={() => setCurrentIndex(index)}
-                  className={`flex-shrink-0 h-16 w-16 rounded-md border-2 overflow-hidden ${
+                  style={{ width: '64px', height: '64px', minWidth: '64px', minHeight: '64px', flexShrink: 0 }}
+                  className={`rounded-md border-2 overflow-hidden ${
                     index === currentIndex
                       ? 'border-[#155dfc] ring-2 ring-[#155dfc]/30'
                       : 'border-[#e2e8f0] hover:border-slate-400'
@@ -155,7 +156,7 @@ export default function MultiPhotoUpload({
                 >
                   <img
                     src={photo}
-                    className="w-full h-full object-cover"
+                    style={{ width: '64px', height: '64px', objectFit: 'cover', display: 'block' }}
                     alt={`thumbnail ${index + 1}`}
                   />
                 </button>

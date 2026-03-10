@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
-import { ArrowLeft, Upload, X, FileText, Loader2 } from 'lucide-react';
+import { ArrowLeft, Upload, X, FileText, Loader2, Plus } from 'lucide-react';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
-import { createInvoice, uploadFileToStorage } from '../lib/supabase';
+import { createInvoice, uploadFileToStorage, type DonationLink } from '../lib/supabase';
 import MultiPhotoUpload from './MultiPhotoUpload';
 
 interface AddNewCaseProps {
@@ -22,6 +22,8 @@ export default function AddNewCase({ onBack }: AddNewCaseProps) {
     pet_story: '',
     instagram_link: ''
   });
+  const [donationLinks, setDonationLinks] = useState<DonationLink[]>([]);
+  const [newDonationLink, setNewDonationLink] = useState<DonationLink>({ url: '', label: '' });
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
   const [photoPreviewUrls, setPhotoPreviewUrls] = useState<string[]>([]);
   const [invoiceFiles, setInvoiceFiles] = useState<File[]>([]);
@@ -64,6 +66,17 @@ export default function AddNewCase({ onBack }: AddNewCaseProps) {
     setInvoiceFiles(invoiceFiles.filter((_, i) => i !== index));
   };
 
+  const addDonationLink = () => {
+    if (newDonationLink.url) {
+      setDonationLinks([...donationLinks, newDonationLink]);
+      setNewDonationLink({ url: '', label: '' });
+    }
+  };
+
+  const removeDonationLink = (index: number) => {
+    setDonationLinks(donationLinks.filter((_, i) => i !== index));
+  };
+
   const hasUnsavedChanges = (): boolean =>
     !!(
       newCase.animal_name ||
@@ -72,6 +85,7 @@ export default function AddNewCase({ onBack }: AddNewCaseProps) {
       newCase.payment_link ||
       newCase.pet_story ||
       newCase.instagram_link ||
+      donationLinks.length > 0 ||
       photoPreviewUrls.length > 0 ||
       invoiceFiles.length > 0
     );
@@ -94,8 +108,13 @@ export default function AddNewCase({ onBack }: AddNewCaseProps) {
   }, [newCase, photoPreviewUrls, invoiceFiles]);
 
   const handlePublish = async () => {
-    if (!newCase.animal_name || !newCase.medical_condition || !newCase.estimated_cost || !newCase.payment_link) {
+    if (!newCase.animal_name || !newCase.medical_condition || !newCase.estimated_cost) {
       alert('Please fill in all required fields');
+      return;
+    }
+
+    if (donationLinks.length === 0) {
+      alert('Please add at least one donation link');
       return;
     }
 
@@ -141,7 +160,7 @@ export default function AddNewCase({ onBack }: AddNewCaseProps) {
         animal_type: 'Unknown',
         medical_condition: newCase.medical_condition,
         estimated_cost: parseFloat(newCase.estimated_cost),
-        payment_link: newCase.payment_link,
+        payment_link: JSON.stringify(donationLinks),
         pet_photo: JSON.stringify(photoUrls),
         pet_story: newCase.pet_story || null,
         instagram_link: newCase.instagram_link || null,
@@ -162,6 +181,8 @@ export default function AddNewCase({ onBack }: AddNewCaseProps) {
         pet_story: '',
         instagram_link: ''
       });
+      setDonationLinks([]);
+      setNewDonationLink({ url: '', label: '' });
       setPhotoFiles([]);
       setPhotoPreviewUrls([]);
       setInvoiceFiles([]);
@@ -243,13 +264,60 @@ export default function AddNewCase({ onBack }: AddNewCaseProps) {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="payment-link">Vet Payment Link *</Label>
-                <Input
-                  id="payment-link"
-                  placeholder="https://..."
-                  value={newCase.payment_link}
-                  onChange={(e) => setNewCase({ ...newCase, payment_link: e.target.value })}
-                />
+                <Label>Donation Links *</Label>
+                <div className="space-y-3">
+                  {/* Input fields for new donation link */}
+                  <div className="space-y-2">
+                    <Label htmlFor="donation-url" className="text-sm text-gray-600">Payment URL</Label>
+                    <Input
+                      id="donation-url"
+                      placeholder="https://..."
+                      value={newDonationLink.url}
+                      onChange={(e) => setNewDonationLink({ ...newDonationLink, url: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="donation-label" className="text-sm text-gray-600">Label (Optional)</Label>
+                    <Input
+                      id="donation-label"
+                      placeholder="e.g., Google Pay, Bank Transfer, etc."
+                      value={newDonationLink.label}
+                      onChange={(e) => setNewDonationLink({ ...newDonationLink, label: e.target.value })}
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    onClick={addDonationLink}
+                    variant="outline"
+                    className="w-full gap-2"
+                    disabled={!newDonationLink.url}
+                  >
+                    <Plus className="size-4" />
+                    Add Donation Link
+                  </Button>
+
+                  {/* Display added donation links */}
+                  {donationLinks.length > 0 && (
+                    <div className="space-y-2 pt-2">
+                      <p className="text-sm font-medium text-[#0f172b]">Added Links:</p>
+                      {donationLinks.map((link, index) => (
+                        <div key={index} className="flex items-center justify-between p-3 border border-[#e2e8f0] rounded-lg bg-[#f8fafc]">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-[#0f172b] truncate">{link.label || 'Donate Now'}</p>
+                            <p className="text-xs text-[#45556c] truncate">{link.url}</p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removeDonationLink(index)}
+                            className="text-red-600 hover:text-red-700 ml-2 flex-shrink-0"
+                          >
+                            <X className="size-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
               
               <div className="space-y-2">

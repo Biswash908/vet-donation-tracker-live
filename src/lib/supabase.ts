@@ -10,6 +10,11 @@ if (!supabaseUrl || !supabaseAnonKey) {
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // Type definitions
+export interface DonationLink {
+  url: string;
+  label: string;
+}
+
 export interface Invoice {
   id: string;
   animal_name: string;

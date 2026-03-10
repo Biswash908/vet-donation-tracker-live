@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
-import { ArrowLeft, Trash2, Plus, X, Save, FileText, Loader2 } from 'lucide-react';
+import { ArrowLeft, Trash2, Plus, X, Save, FileText, Loader2, Link } from 'lucide-react';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
-import { fetchInvoiceById, updateInvoice, deleteInvoice, addDonation, deleteDonation, uploadFileToStorage, type Invoice, type Donation } from '../lib/supabase';
+import { fetchInvoiceById, updateInvoice, deleteInvoice, addDonation, deleteDonation, uploadFileToStorage, type Invoice, type Donation, type DonationLink } from '../lib/supabase';
 import MultiPhotoUpload from './MultiPhotoUpload';
 
 interface EditCaseProps {
@@ -20,11 +20,11 @@ export default function EditCase({ petId, onBack }: EditCaseProps) {
     animal_name: '',
     medical_condition: '',
     estimated_cost: '',
-    payment_link: '',
     pet_story: '',
     instagram_link: '',
     status: 'pending' as any
   });
+  const [donationLinks, setDonationLinks] = useState<DonationLink[]>([{ url: '', label: '' }]);
   const [donations, setDonations] = useState<Donation[]>([]);
   const [showDonationForm, setShowDonationForm] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -51,11 +51,26 @@ export default function EditCase({ petId, onBack }: EditCaseProps) {
             animal_name: data.animal_name || '',
             medical_condition: data.medical_condition || '',
             estimated_cost: (data.estimated_cost != null ? data.estimated_cost : 0).toString(),
-            payment_link: data.payment_link || '',
             pet_story: data.pet_story || '',
             instagram_link: data.instagram_link || '',
             status: data.status
           });
+
+          // Parse payment_link: supports legacy single URL or new JSON array of DonationLink
+          if (data.payment_link) {
+            try {
+              const parsed = JSON.parse(data.payment_link);
+              if (Array.isArray(parsed)) {
+                setDonationLinks(parsed.length > 0 ? parsed : [{ url: '', label: '' }]);
+              } else {
+                setDonationLinks([{ url: parsed, label: '' }]);
+              }
+            } catch {
+              setDonationLinks([{ url: data.payment_link, label: '' }]);
+            }
+          } else {
+            setDonationLinks([{ url: '', label: '' }]);
+          }
           setDonations(data.donations || []);
 
           // Parse existing photo URLs (can be JSON array or single URL)
@@ -111,7 +126,6 @@ export default function EditCase({ petId, onBack }: EditCaseProps) {
         editedCase.animal_name !== (pet.animal_name || '') ||
         editedCase.medical_condition !== (pet.medical_condition || '') ||
         editedCase.estimated_cost !== origCost ||
-        editedCase.payment_link !== (pet.payment_link || '') ||
         editedCase.pet_story !== (pet.pet_story || '') ||
         editedCase.instagram_link !== (pet.instagram_link || '') ||
         editedCase.status !== pet.status ||
@@ -153,7 +167,6 @@ export default function EditCase({ petId, onBack }: EditCaseProps) {
       editedCase.animal_name !== (pet.animal_name || '') ||
       editedCase.medical_condition !== (pet.medical_condition || '') ||
       editedCase.estimated_cost !== origCost ||
-      editedCase.payment_link !== (pet.payment_link || '') ||
       editedCase.pet_story !== (pet.pet_story || '') ||
       editedCase.instagram_link !== (pet.instagram_link || '') ||
       editedCase.status !== pet.status ||
@@ -183,7 +196,7 @@ export default function EditCase({ petId, onBack }: EditCaseProps) {
         animal_name: editedCase.animal_name,
         medical_condition: editedCase.medical_condition,
         estimated_cost: parseFloat(editedCase.estimated_cost),
-        payment_link: editedCase.payment_link,
+        payment_link: JSON.stringify(donationLinks.filter(l => l.url.trim() !== '')),
         pet_story: editedCase.pet_story,
         instagram_link: editedCase.instagram_link,
         status: editedCase.status as any
@@ -568,14 +581,54 @@ export default function EditCase({ petId, onBack }: EditCaseProps) {
               <CardTitle className="text-lg">Links & Documents</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+
+              {/* Donation Links */}
               <div className="space-y-2">
-                <Label htmlFor="payment-link">Vet Payment Link *</Label>
-                <Input
-                  id="payment-link"
-                  value={editedCase.payment_link}
-                  onChange={(e) => setEditedCase({ ...editedCase, payment_link: e.target.value })}
-                  className="bg-[#f3f3f5] border-0"
-                />
+                <div className="flex items-center justify-between">
+                  <Label>Donation Links</Label>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-7 gap-1 text-xs border-[#e2e8f0]"
+                    onClick={() => setDonationLinks(prev => [...prev, { url: '', label: '' }])}
+                  >
+                    <Plus className="size-3" />
+                    Add Link
+                  </Button>
+                </div>
+                <p className="text-xs text-[#64748b]">One link shows a single "Donate Now" button. Multiple links show separate buttons.</p>
+                <div className="space-y-2">
+                  {donationLinks.map((link, i) => (
+                    <div key={i} className="flex gap-2 items-start">
+                      <div className="flex-1 space-y-1">
+                        <Input
+                          placeholder="Button label (e.g. Donate 100 AED)"
+                          value={link.label}
+                          onChange={(e) => setDonationLinks(prev => prev.map((l, j) => j === i ? { ...l, label: e.target.value } : l))}
+                          className="bg-[#f3f3f5] border-0 text-sm h-9"
+                        />
+                        <Input
+                          placeholder="https://payment-link.com"
+                          value={link.url}
+                          onChange={(e) => setDonationLinks(prev => prev.map((l, j) => j === i ? { ...l, url: e.target.value } : l))}
+                          className="bg-[#f3f3f5] border-0 text-sm h-9"
+                        />
+                      </div>
+                      {donationLinks.length > 1 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-50 mt-1 shrink-0"
+                          onClick={() => setDonationLinks(prev => prev.filter((_, j) => j !== i))}
+                        >
+                          <X className="size-4" />
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -876,14 +929,54 @@ export default function EditCase({ petId, onBack }: EditCaseProps) {
                 <CardTitle className="text-xl">Links & Documents</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+
+                {/* Donation Links */}
                 <div className="space-y-2">
-                  <Label htmlFor="payment-link">Vet Payment Link *</Label>
-                  <Input
-                    id="payment-link"
-                    value={editedCase.payment_link}
-                    onChange={(e) => setEditedCase({ ...editedCase, payment_link: e.target.value })}
-                    className="bg-[#f3f3f5] border-0"
-                  />
+                  <div className="flex items-center justify-between">
+                    <Label>Donation Links</Label>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="h-7 gap-1 text-xs border-[#e2e8f0]"
+                      onClick={() => setDonationLinks(prev => [...prev, { url: '', label: '' }])}
+                    >
+                      <Plus className="size-3" />
+                      Add Link
+                    </Button>
+                  </div>
+                  <p className="text-xs text-[#64748b]">One link shows a single "Donate Now" button. Multiple links show separate buttons.</p>
+                  <div className="space-y-2">
+                    {donationLinks.map((link, i) => (
+                      <div key={i} className="flex gap-2 items-start">
+                        <div className="flex-1 space-y-1">
+                          <Input
+                            placeholder="Button label (e.g. Donate 100 AED)"
+                            value={link.label}
+                            onChange={(e) => setDonationLinks(prev => prev.map((l, j) => j === i ? { ...l, label: e.target.value } : l))}
+                            className="bg-[#f3f3f5] border-0 text-sm h-9"
+                          />
+                          <Input
+                            placeholder="https://payment-link.com"
+                            value={link.url}
+                            onChange={(e) => setDonationLinks(prev => prev.map((l, j) => j === i ? { ...l, url: e.target.value } : l))}
+                            className="bg-[#f3f3f5] border-0 text-sm h-9"
+                          />
+                        </div>
+                        {donationLinks.length > 1 && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-50 mt-1 shrink-0"
+                            onClick={() => setDonationLinks(prev => prev.filter((_, j) => j !== i))}
+                          >
+                            <X className="size-4" />
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
                 <div className="space-y-2">

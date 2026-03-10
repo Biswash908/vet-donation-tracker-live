@@ -129,13 +129,14 @@ export default function PhotoCarousel({ photos, petName }: PhotoCarouselProps) {
                   key={index}
                   ref={(el) => { thumbnailRefs.current[index] = el; }}
                   onClick={() => goTo(index)}
-                  className={`flex-shrink-0 h-16 w-16 rounded-md border-2 overflow-hidden transition-all cursor-pointer ${
+                  style={{ width: '64px', height: '64px', minWidth: '64px', minHeight: '64px', flexShrink: 0 }}
+                  className={`rounded-md border-2 overflow-hidden transition-all cursor-pointer ${
                     index === currentIndex
                       ? 'border-[#155dfc] ring-2 ring-[#155dfc]/30'
                       : 'border-[#e2e8f0] hover:border-slate-400'
                   }`}
                 >
-                  <img src={photo} className="w-full h-full object-cover" alt={`thumbnail ${index + 1}`} />
+                  <img src={photo} style={{ width: '64px', height: '64px', objectFit: 'cover', display: 'block' }} alt={`thumbnail ${index + 1}`} />
                 </button>
               ))}
             </div>

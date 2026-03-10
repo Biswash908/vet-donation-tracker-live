@@ -31,6 +31,10 @@ export default function App() {
     ? invoices.find(pet => pet.id === selectedPetId) 
     : null;
 
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [currentView, selectedPetId]);
+
   const handleRefresh = () => {
     setRefreshKey(prev => prev + 1);
   };
@@ -91,7 +95,7 @@ export default function App() {
   })();
 
   return (
-    <div className="min-h-screen w-full overflow-x-hidden">
+    <div className="min-h-screen overflow-x-hidden">
       {content}
     </div>
   );

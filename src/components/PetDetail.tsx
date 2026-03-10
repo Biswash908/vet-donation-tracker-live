@@ -1,7 +1,7 @@
 import { ArrowLeft, FileText, Heart, Instagram, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from './ui/button';
 import { useState } from 'react';
-import type { Invoice } from '../lib/supabase';
+import type { Invoice, DonationLink } from '../lib/supabase';
 import PhotoCarousel from './PhotoCarousel';
 
 interface PetDetailProps {
@@ -46,19 +46,28 @@ export default function PetDetail({ pet, onBack }: PetDetailProps) {
   // Ensure URL has protocol
   const formatPaymentLink = (url: string | undefined): string => {
     if (!url) return '';
-    // If URL already has protocol, return as is
-    if (url.startsWith('http://') || url.startsWith('https://')) {
-      return url;
-    }
-    // Otherwise, prepend https://
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
     return `https://${url}`;
   };
 
-  const handleDonateClick = () => {
-    if (pet.payment_link) {
-      const formattedUrl = formatPaymentLink(pet.payment_link);
-      window.open(formattedUrl, '_blank', 'noopener,noreferrer');
+  // Parse donation links — supports both legacy single URL string and new JSON array format
+  const getDonationLinks = (): DonationLink[] => {
+    if (!pet.payment_link) return [];
+    try {
+      const parsed = JSON.parse(pet.payment_link);
+      if (Array.isArray(parsed)) return parsed as DonationLink[];
+      // Legacy: plain URL string stored as JSON string
+      return [{ url: parsed, label: '' }];
+    } catch {
+      // Legacy: plain URL string (not JSON)
+      return [{ url: pet.payment_link, label: '' }];
     }
+  };
+  const donationLinks = getDonationLinks();
+
+  const handleDonateClick = (url: string) => {
+    const formattedUrl = formatPaymentLink(url);
+    window.open(formattedUrl, '_blank', 'noopener,noreferrer');
   };
 
   return (
@@ -193,17 +202,34 @@ export default function PetDetail({ pet, onBack }: PetDetailProps) {
               />
             </div>
 
-            {/* 3. Donate Button */}
-            <Button 
-              className="w-full bg-[#155dfc] hover:bg-[#1447e6] text-white h-12 text-base gap-2"
-              onClick={handleDonateClick}
-            >
-              <Heart className="size-5" />
-              Donate Now
-            </Button>
-            <p className="text-xs text-center text-[#64748b] mt-3">
-              You'll be redirected to the veterinary clinic's secure payment page
-            </p>
+            {/* 3. Donate Button(s) */}
+            {donationLinks.length === 1 ? (
+              <Button
+                className="w-full bg-[#155dfc] hover:bg-[#1447e6] text-white h-12 text-base gap-2"
+                onClick={() => handleDonateClick(donationLinks[0].url)}
+              >
+                <Heart className="size-5" />
+                {donationLinks[0].label || 'Donate Now'}
+              </Button>
+            ) : donationLinks.length > 1 ? (
+              <div className="flex flex-col gap-2">
+                {donationLinks.map((link, i) => (
+                  <Button
+                    key={i}
+                    className="w-full bg-[#155dfc] hover:bg-[#1447e6] text-white h-12 text-base gap-2"
+                    onClick={() => handleDonateClick(link.url)}
+                  >
+                    <Heart className="size-5" />
+                    {link.label || 'Donate Now'}
+                  </Button>
+                ))}
+              </div>
+            ) : null}
+            {donationLinks.length > 0 && (
+              <p className="text-xs text-center text-[#64748b] mt-3">
+                You'll be redirected to the veterinary clinic's secure payment page
+              </p>
+            )}
           </div>
 
           {/* 4. Details */}
@@ -469,18 +495,34 @@ export default function PetDetail({ pet, onBack }: PetDetailProps) {
                 </div>
               </div>
 
-              {/* Donate Button */}
-              <Button 
-                className="w-full bg-[#155dfc] hover:bg-[#1447e6] text-white h-12 text-base gap-2"
-                onClick={handleDonateClick}
-              >
-                <Heart className="size-5" />
-                Donate Now
-              </Button>
-              
-              <p className="text-xs text-center text-[#64748b] mt-3">
-                You'll be redirected to the veterinary clinic's secure payment page
-              </p>
+              {/* Donate Button(s) */}
+              {donationLinks.length === 1 ? (
+                <Button
+                  className="w-full bg-[#155dfc] hover:bg-[#1447e6] text-white h-12 text-base gap-2"
+                  onClick={() => handleDonateClick(donationLinks[0].url)}
+                >
+                  <Heart className="size-5" />
+                  {donationLinks[0].label || 'Donate Now'}
+                </Button>
+              ) : donationLinks.length > 1 ? (
+                <div className="flex flex-col gap-2">
+                  {donationLinks.map((link, i) => (
+                    <Button
+                      key={i}
+                      className="w-full bg-[#155dfc] hover:bg-[#1447e6] text-white h-12 text-base gap-2"
+                      onClick={() => handleDonateClick(link.url)}
+                    >
+                      <Heart className="size-5" />
+                      {link.label || 'Donate Now'}
+                    </Button>
+                  ))}
+                </div>
+              ) : null}
+              {donationLinks.length > 0 && (
+                <p className="text-xs text-center text-[#64748b] mt-3">
+                  You'll be redirected to the veterinary clinic's secure payment page
+                </p>
+              )}
             </div>
 
             {/* Follow Journey */}
