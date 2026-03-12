@@ -212,22 +212,25 @@ export default function PetDetail({ pet, onBack }: PetDetailProps) {
                 {donationLinks[0].label || 'Donate Now'}
               </Button>
             ) : donationLinks.length > 1 ? (
-              <div className="flex flex-col gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 {donationLinks.map((link, i) => (
                   <Button
                     key={i}
-                    className="w-full bg-[#155dfc] hover:bg-[#1447e6] text-white h-12 text-base gap-2"
+                    className="bg-[#155dfc] hover:bg-[#1447e6] text-white h-10 text-sm gap-1"
                     onClick={() => handleDonateClick(link.url)}
                   >
-                    <Heart className="size-5" />
-                    {link.label || 'Donate Now'}
+                    <Heart className="size-4" />
+                    {link.label || 'Donate'}
                   </Button>
                 ))}
               </div>
             ) : null}
             {donationLinks.length > 0 && (
-              <p className="text-xs text-center text-[#64748b] mt-3">
-                You'll be redirected to the veterinary clinic's secure payment page
+              <p className="text-xs text-center text-[#64748b] mt-3 leading-relaxed">
+                {donationLinks.length === 1 
+                  ? `You'll be redirected to the veterinary clinic's secure payment page. Please mention "JLT Cat Group - ${pet.animal_name}" in the Reference box. DM us a screenshot of your payment to admin/IG/FB. Thankyou!`
+                  : "You'll be redirected to the veterinary clinic's secure payment page. DM us a screenshot of your payment to admin/IG/FB Thank you!"
+                }
               </p>
             )}
           </div>
@@ -505,22 +508,25 @@ export default function PetDetail({ pet, onBack }: PetDetailProps) {
                   {donationLinks[0].label || 'Donate Now'}
                 </Button>
               ) : donationLinks.length > 1 ? (
-                <div className="flex flex-col gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   {donationLinks.map((link, i) => (
                     <Button
                       key={i}
-                      className="w-full bg-[#155dfc] hover:bg-[#1447e6] text-white h-12 text-base gap-2"
+                      className="bg-[#155dfc] hover:bg-[#1447e6] text-white h-10 text-sm gap-1"
                       onClick={() => handleDonateClick(link.url)}
                     >
-                      <Heart className="size-5" />
-                      {link.label || 'Donate Now'}
+                      <Heart className="size-4" />
+                      {link.label || 'Donate'}
                     </Button>
                   ))}
                 </div>
               ) : null}
               {donationLinks.length > 0 && (
-                <p className="text-xs text-center text-[#64748b] mt-3">
-                  You'll be redirected to the veterinary clinic's secure payment page
+                <p className="text-xs text-center text-[#64748b] mt-3 leading-relaxed">
+                  {donationLinks.length === 1 
+                    ? `You'll be redirected to the veterinary clinic's secure payment page. Please mention "JLT Cat Group - ${pet.animal_name}" in the Reference box. DM us a screenshot of your payment to admin/IG/FB. Thankyou!`
+                    : "You'll be redirected to the veterinary clinic's secure payment page. DM us a screenshot of your payment to admin/IG/FB Thank you!"
+                  }
                 </p>
               )}
             </div>
