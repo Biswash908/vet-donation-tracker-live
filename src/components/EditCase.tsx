@@ -227,8 +227,23 @@ export default function EditCase({ petId, onBack }: EditCaseProps) {
       // Update pet_photo only with clean URLs
       updates.pet_photo = finalPhotoUrls.length > 0 ? JSON.stringify(finalPhotoUrls) : null;
 
-      // ... Handle Invoices (same logic: filter existing vs new) ...
-      const finalInvoiceUrls = [...existingInvoiceUrls]; // Add logic here if you want to upload new invoices too
+      // Handle Invoices (same logic: filter existing vs new)
+      const newInvoiceUrls: string[] = [];
+      if (invoiceFiles.length > 0) {
+        for (const file of invoiceFiles) {
+          const timestamp = Date.now();
+          const invoicePath = `invoices/${timestamp}-${file.name}`;
+          const invoiceUrl = await uploadFileToStorage(file, 'pet-invoices', invoicePath);
+
+          if (!invoiceUrl) {
+            throw new Error(`Failed to upload ${file.name}`);
+          }
+          newInvoiceUrls.push(invoiceUrl);
+        }
+      }
+
+      // Combine existing invoice URLs with newly uploaded ones
+      const finalInvoiceUrls = [...existingInvoiceUrls, ...newInvoiceUrls];
       updates.invoice_file = finalInvoiceUrls.length > 0 ? JSON.stringify(finalInvoiceUrls) : null;
 
       await updateInvoice(petId, updates);
@@ -237,6 +252,9 @@ export default function EditCase({ petId, onBack }: EditCaseProps) {
       setPhotoFiles([]);
       setPhotoUrls(finalPhotoUrls);
       setOriginalPhotoUrls(finalPhotoUrls);
+      setInvoiceFiles([]);
+      setExistingInvoiceUrls(finalInvoiceUrls);
+      setOriginalInvoiceUrls(finalInvoiceUrls);
       onBack();
     } catch (error: any) {
       console.error('Error saving case:', error);
