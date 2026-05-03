@@ -20,7 +20,8 @@ export default function AddNewCase({ onBack }: AddNewCaseProps) {
     payment_link: '',
     pet_photo: '',
     pet_story: '',
-    instagram_link: ''
+    instagram_link: '',
+    vet_name: ''
   });
   const [donationLinks, setDonationLinks] = useState<DonationLink[]>([]);
   const [newDonationLink, setNewDonationLink] = useState<DonationLink>({ url: '', label: '' });
@@ -85,6 +86,7 @@ export default function AddNewCase({ onBack }: AddNewCaseProps) {
       newCase.payment_link ||
       newCase.pet_story ||
       newCase.instagram_link ||
+      newCase.vet_name ||
       donationLinks.length > 0 ||
       photoPreviewUrls.length > 0 ||
       invoiceFiles.length > 0
@@ -108,7 +110,7 @@ export default function AddNewCase({ onBack }: AddNewCaseProps) {
   }, [newCase, photoPreviewUrls, invoiceFiles]);
 
   const handlePublish = async () => {
-    if (!newCase.animal_name || !newCase.medical_condition || !newCase.estimated_cost) {
+    if (!newCase.animal_name || !newCase.medical_condition || !newCase.estimated_cost || !newCase.vet_name) {
       alert('Please fill in all required fields');
       return;
     }
@@ -164,6 +166,7 @@ export default function AddNewCase({ onBack }: AddNewCaseProps) {
         pet_photo: JSON.stringify(photoUrls),
         pet_story: newCase.pet_story || null,
         instagram_link: newCase.instagram_link || null,
+        vet_name: newCase.vet_name,
         invoice_file: invoiceUrls.length > 0 ? JSON.stringify(invoiceUrls) : null,
         status: 'pending' as const
       };
@@ -179,7 +182,8 @@ export default function AddNewCase({ onBack }: AddNewCaseProps) {
         payment_link: '',
         pet_photo: '',
         pet_story: '',
-        instagram_link: ''
+        instagram_link: '',
+        vet_name: ''
       });
       setDonationLinks([]);
       setNewDonationLink({ url: '', label: '' });
@@ -260,6 +264,16 @@ export default function AddNewCase({ onBack }: AddNewCaseProps) {
                   placeholder="0.00"
                   value={newCase.estimated_cost}
                   onChange={(e) => setNewCase({ ...newCase, estimated_cost: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="vet-name">Vet Name/Clinic/Hospital *</Label>
+                <Input
+                  id="vet-name"
+                  placeholder="e.g., Dr. Smith's Clinic or Animal Hospital Dubai"
+                  value={newCase.vet_name}
+                  onChange={(e) => setNewCase({ ...newCase, vet_name: e.target.value })}
                 />
               </div>
               

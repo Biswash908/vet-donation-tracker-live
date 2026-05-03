@@ -57,7 +57,8 @@ export default function Home({ onSelectPet, onAdminClick }: HomeProps) {
     return (
       invoice.animal_name.toLowerCase().includes(query) ||
       invoice.animal_type.toLowerCase().includes(query) ||
-      invoice.medical_condition.toLowerCase().includes(query)
+      invoice.medical_condition.toLowerCase().includes(query) ||
+      (invoice.vet_name && invoice.vet_name.toLowerCase().includes(query))
     );
   });
 
@@ -119,7 +120,7 @@ export default function Home({ onSelectPet, onAdminClick }: HomeProps) {
               </div>
               <Input
                 type="text"
-                placeholder="Search by pet name, type, or condition..."
+                placeholder="Search by pet name, type, condition, or vet..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10 h-[50px] bg-[#f1f5f9] border-0 text-[13px] text-[#717182]"
@@ -136,7 +137,7 @@ export default function Home({ onSelectPet, onAdminClick }: HomeProps) {
               </div>
               <Input
                 type="text"
-                placeholder="Search by pet name or condition..."
+                placeholder="Search by pet name, condition, or vet..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-11 h-12 bg-[#f1f5f9] border-0 text-[13px] text-[#717182]"
