@@ -364,16 +364,13 @@ export default function Home({ onSelectPet, onAdminClick }: HomeProps) {
               </div>
             )}
 
-          {!loading && !error && filteredInvoices.length === 0 && invoices.length === 0 && (
-            <div className="text-center py-12">
-              <p className="text-slate-600 text-lg">No campaigns available yet.</p>
-            </div>
-          )}
-          {!loading && !error && filteredInvoices.length === 0 && invoices.length > 0 && (
-            <div className="text-center py-12">
+            {!loading && !error && filteredInvoices.length === 0 && invoices.length === 0 && (
+              <p className="text-slate-500 text-base pt-2">No campaigns available yet.</p>
+            )}
+            {!loading && !error && filteredInvoices.length === 0 && invoices.length > 0 && (
               <p className="text-slate-600 text-lg">No campaigns found for this vet.</p>
-            </div>
-          )}
+                <p className="text-slate-600 text-lg">No campaigns found matching your search.</p>
+            )}
           </div>
 
         </main>

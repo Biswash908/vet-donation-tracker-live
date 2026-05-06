@@ -5,11 +5,12 @@ import AddNewCase from './components/AddNewCase';
 import AdminDashboard from './components/AdminDashboard';
 import AdminLogin from './components/AdminLogin';
 import EditCase from './components/EditCase';
+import VetManagement from './components/VetManagement';
 import { fetchInvoices, Invoice } from './lib/supabase';
 
 export default function App() {
   const [selectedPetId, setSelectedPetId] = useState<string | null>(null);
-  const [currentView, setCurrentView] = useState<'home' | 'admin-login' | 'admin-dashboard' | 'admin-add-case' | 'admin-edit-case'>('home');
+  const [currentView, setCurrentView] = useState<'home' | 'admin-login' | 'admin-dashboard' | 'admin-add-case' | 'admin-edit-case' | 'vet-management'>('home');
   const [editingPetId, setEditingPetId] = useState<string | null>(null);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -58,6 +59,15 @@ export default function App() {
             setEditingPetId(petId);
             setCurrentView('admin-edit-case');
           }}
+          onManageVets={() => setCurrentView('vet-management')}
+        />
+      );
+    }
+
+    if (currentView === 'vet-management') {
+      return (
+        <VetManagement 
+          onBack={() => setCurrentView('admin-dashboard')}
         />
       );
     }

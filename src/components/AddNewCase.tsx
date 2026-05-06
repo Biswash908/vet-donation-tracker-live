@@ -5,8 +5,9 @@ import { ArrowLeft, Upload, X, FileText, Loader2, Plus } from 'lucide-react';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
-import { createInvoice, uploadFileToStorage, type DonationLink } from '../lib/supabase';
+import { createInvoice, uploadFileToStorage, fetchVets, type DonationLink, type Vet } from '../lib/supabase';
 import MultiPhotoUpload from './MultiPhotoUpload';
+import VetSelector from './VetSelector';
 
 interface AddNewCaseProps {
   onBack: () => void;
@@ -29,6 +30,20 @@ export default function AddNewCase({ onBack }: AddNewCaseProps) {
   const [photoPreviewUrls, setPhotoPreviewUrls] = useState<string[]>([]);
   const [invoiceFiles, setInvoiceFiles] = useState<File[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [vets, setVets] = useState<Vet[]>([]);
+  const [selectedVetId, setSelectedVetId] = useState<string>('');
+
+  useEffect(() => {
+    const loadVets = async () => {
+      try {
+        const data = await fetchVets();
+        setVets(data);
+      } catch (error) {
+        console.error('Failed to load vets:', error);
+      }
+    };
+    loadVets();
+  }, []);
 
   const handlePhotoUpload = (files: File[]) => {
     const newFiles = [...photoFiles, ...files];
@@ -110,7 +125,7 @@ export default function AddNewCase({ onBack }: AddNewCaseProps) {
   }, [newCase, photoPreviewUrls, invoiceFiles]);
 
   const handlePublish = async () => {
-    if (!newCase.animal_name || !newCase.medical_condition || !newCase.estimated_cost || !newCase.vet_name) {
+    if (!newCase.animal_name || !newCase.medical_condition || !newCase.estimated_cost || !selectedVetId) {
       alert('Please fill in all required fields');
       return;
     }
@@ -157,6 +172,7 @@ export default function AddNewCase({ onBack }: AddNewCaseProps) {
         }
       }
 
+      const selectedVet = vets.find(v => v.id === selectedVetId);
       const invoiceData = {
         animal_name: newCase.animal_name,
         animal_type: 'Unknown',
@@ -166,7 +182,8 @@ export default function AddNewCase({ onBack }: AddNewCaseProps) {
         pet_photo: JSON.stringify(photoUrls),
         pet_story: newCase.pet_story || null,
         instagram_link: newCase.instagram_link || null,
-        vet_name: newCase.vet_name,
+        vet_name: selectedVet?.name || '',
+        vet_id: selectedVetId,
         invoice_file: invoiceUrls.length > 0 ? JSON.stringify(invoiceUrls) : null,
         status: 'pending' as const
       };
@@ -190,6 +207,7 @@ export default function AddNewCase({ onBack }: AddNewCaseProps) {
       setPhotoFiles([]);
       setPhotoPreviewUrls([]);
       setInvoiceFiles([]);
+      setSelectedVetId('');
       
       onBack();
     } catch (error) {
@@ -267,15 +285,12 @@ export default function AddNewCase({ onBack }: AddNewCaseProps) {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="vet-name">Vet Name/Clinic/Hospital *</Label>
-                <Input
-                  id="vet-name"
-                  placeholder="e.g., Dr. Smith's Clinic or Animal Hospital Dubai"
-                  value={newCase.vet_name}
-                  onChange={(e) => setNewCase({ ...newCase, vet_name: e.target.value })}
-                />
-              </div>
+              <VetSelector
+                vets={vets}
+                selectedVetId={selectedVetId}
+                onChange={setSelectedVetId}
+                label="Vet / Clinic / Hospital *"
+              />
               
               <div className="space-y-2">
                 <Label>Donation Links *</Label>

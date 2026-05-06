@@ -31,7 +31,15 @@ export interface Invoice {
   pet_photo?: string;
   pet_story?: string;
   instagram_link?: string;
+  vet_name?: string;
+  vet_id?: string;
   donations?: Donation[];
+}
+
+export interface Vet {
+  id: string;
+  name: string;
+  created_at: string;
 }
 
 export interface Donation {
@@ -208,3 +216,45 @@ export const uploadFileToStorage = async (
     return null;
   }
 };
+
+// Vet Management Functions
+export async function fetchVets(): Promise<Vet[]> {
+  const { data, error } = await supabase
+    .from('vets')
+    .select('*')
+    .order('name', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching vets:', error);
+    return [];
+  }
+
+  return data || [];
+}
+
+export async function addVet(name: string): Promise<Vet | null> {
+  const { data, error } = await supabase
+    .from('vets')
+    .insert([{ name }])
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error adding vet:', error);
+    throw error;
+  }
+
+  return data;
+}
+
+export async function deleteVet(vetId: string): Promise<void> {
+  const { error } = await supabase
+    .from('vets')
+    .delete()
+    .eq('id', vetId);
+
+  if (error) {
+    console.error('Error deleting vet:', error);
+    throw error;
+  }
+}

@@ -5,8 +5,9 @@ import { ArrowLeft, Trash2, Plus, X, Save, FileText, Loader2, Link } from 'lucid
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
-import { fetchInvoiceById, updateInvoice, deleteInvoice, addDonation, deleteDonation, uploadFileToStorage, type Invoice, type Donation, type DonationLink } from '../lib/supabase';
+import { fetchInvoiceById, updateInvoice, deleteInvoice, addDonation, deleteDonation, uploadFileToStorage, fetchVets, type Invoice, type Donation, type DonationLink, type Vet } from '../lib/supabase';
 import MultiPhotoUpload from './MultiPhotoUpload';
+import VetSelector from './VetSelector';
 
 interface EditCaseProps {
   petId: string;
@@ -40,6 +41,8 @@ export default function EditCase({ petId, onBack }: EditCaseProps) {
   const [invoiceFiles, setInvoiceFiles] = useState<File[]>([]);
   const [existingInvoiceUrls, setExistingInvoiceUrls] = useState<string[]>([]);
   const [originalInvoiceUrls, setOriginalInvoiceUrls] = useState<string[]>([]);
+  const [vets, setVets] = useState<Vet[]>([]);
+  const [selectedVetId, setSelectedVetId] = useState<string>('');
 
   useEffect(() => {
     const loadPet = async () => {
@@ -106,6 +109,7 @@ export default function EditCase({ petId, onBack }: EditCaseProps) {
           console.log('[v0] Setting existing invoice URLs:', urls);
           setExistingInvoiceUrls(urls);
           setOriginalInvoiceUrls(urls);
+          setSelectedVetId(data.vet_id || '');
         }
       } catch (error) {
         console.error('Failed to load pet:', error);
@@ -116,6 +120,18 @@ export default function EditCase({ petId, onBack }: EditCaseProps) {
 
     loadPet();
   }, [petId]);
+
+  useEffect(() => {
+    const loadVets = async () => {
+      try {
+        const data = await fetchVets();
+        setVets(data);
+      } catch (error) {
+        console.error('Failed to load vets:', error);
+      }
+    };
+    loadVets();
+  }, []);
 
   // beforeunload: warn when closing tab/window with unsaved changes (must be before early returns)
   useEffect(() => {
@@ -192,6 +208,7 @@ export default function EditCase({ petId, onBack }: EditCaseProps) {
 
     setIsSaving(true);
     try {
+      const selectedVet = vets.find(v => v.id === selectedVetId);
       let updates: any = {
         animal_name: editedCase.animal_name,
         medical_condition: editedCase.medical_condition,
@@ -199,7 +216,9 @@ export default function EditCase({ petId, onBack }: EditCaseProps) {
         payment_link: JSON.stringify(donationLinks.filter(l => l.url.trim() !== '')),
         pet_story: editedCase.pet_story,
         instagram_link: editedCase.instagram_link,
-        status: editedCase.status as any
+        status: editedCase.status as any,
+        vet_name: selectedVet?.name || '',
+        vet_id: selectedVetId || null
       };
 
       // 1. FILTER: Keep only existing remote URLs from the preview list
@@ -395,6 +414,14 @@ export default function EditCase({ petId, onBack }: EditCaseProps) {
                   className="bg-[#f3f3f5] border-0"
                 />
               </div>
+
+              <VetSelector
+                vets={vets}
+                selectedVetId={selectedVetId}
+                onChange={setSelectedVetId}
+                label="Vet / Clinic / Hospital (Editable)"
+              />
+
             </CardContent>
           </Card>
 
@@ -813,6 +840,12 @@ export default function EditCase({ petId, onBack }: EditCaseProps) {
                   />
                 </div>
 
+                <VetSelector
+                  vets={vets}
+                  selectedVetId={selectedVetId}
+                  onChange={setSelectedVetId}
+                  label="Vet / Clinic / Hospital (Editable)"
+                />
 
               </CardContent>
             </Card>

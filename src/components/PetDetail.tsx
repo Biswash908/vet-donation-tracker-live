@@ -248,14 +248,25 @@ export default function PetDetail({ pet, onBack }: PetDetailProps) {
             </div>
 
             {/* Medical Condition */}
-            <div className="bg-white border border-[#e2e8f0] rounded-[10px] p-6 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)]">
-              <h3 className="text-[20px] font-medium text-[#0f172b] mb-3 leading-7">
-                Medical Condition
-              </h3>
-              <p className="text-[15px] text-[#45556c] leading-6">
-                {pet.medical_condition}
-              </p>
-            </div>
+<div className="bg-white border border-[#e2e8f0] rounded-[10px] p-6 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)]">
+  <h3 className="text-[20px] font-medium text-[#0f172b] mb-3 leading-7">
+    Medical Condition
+  </h3>
+
+  <p className="text-[15px] text-[#45556c] leading-6 mb-4 whitespace-pre-wrap">
+    {pet.medical_condition}
+  </p>
+
+  {/* Treating Veterinarian (merged cleanly) */}
+  <div className="pt-4 border-t border-[#e2e8f0]">
+    <p className="text-sm text-[#64748b] mb-1">
+      Treating Veterinarian
+    </p>
+    <p className="text-[15px] font-medium text-[#0f172b]">
+      {pet.vet_name || 'Not assigned'}
+    </p>
+  </div>
+</div>
 
             {/* Recent Donations */}
             <div className="bg-white border border-[#e2e8f0] rounded-[10px] p-6 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)]">
@@ -364,15 +375,26 @@ export default function PetDetail({ pet, onBack }: PetDetailProps) {
               </p>
             </div>
 
-            {/* Medical Condition */}
-            <div className="bg-white border border-[#e2e8f0] rounded-[10px] p-6 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)]">
-              <h3 className="text-[20px] font-medium text-[#0f172b] mb-3 leading-7">
-                Medical Condition
-              </h3>
-              <p className="text-[15px] text-[#45556c] leading-6">
-                {pet.medical_condition}
-              </p>
-            </div>
+{/* Medical Condition */}
+<div className="bg-white border border-[#e2e8f0] rounded-[10px] p-6 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)]">
+  <h3 className="text-[20px] font-medium text-[#0f172b] mb-3 leading-7">
+    Medical Condition
+  </h3>
+
+  <p className="text-[15px] text-[#45556c] leading-6 mb-4 whitespace-pre-wrap">
+    {pet.medical_condition}
+  </p>
+
+  {/* Treating Veterinarian */}
+  <div className="pt-4 border-t border-[#e2e8f0]">
+    <p className="text-sm text-[#64748b] mb-1">
+      Treating Veterinarian
+    </p>
+    <p className="text-[15px] font-medium text-[#0f172b]">
+      {pet.vet_name || 'Not assigned'}
+    </p>
+  </div>
+</div>
 
             {/* Recent Donations */}
             <div className="bg-white border border-[#e2e8f0] rounded-[10px] p-6 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)]">

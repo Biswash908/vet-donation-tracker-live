@@ -1,4 +1,4 @@
-import { Plus, Edit, ArrowLeft } from 'lucide-react';
+import { Plus, Edit, ArrowLeft, Stethoscope } from 'lucide-react';
 import { Button } from './ui/button';
 import { useState, useEffect } from 'react';
 import { fetchInvoices, Invoice } from '../lib/supabase';
@@ -7,9 +7,10 @@ interface AdminDashboardProps {
   onBack: () => void;
   onAddNewCase: () => void;
   onEditCase: (petId: string) => void;
+  onManageVets: () => void;
 }
 
-export default function AdminDashboard({ onBack, onAddNewCase, onEditCase }: AdminDashboardProps) {
+export default function AdminDashboard({ onBack, onAddNewCase, onEditCase, onManageVets }: AdminDashboardProps) {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -60,14 +61,25 @@ export default function AdminDashboard({ onBack, onAddNewCase, onEditCase }: Adm
               </div>
             </div>
             
-            <Button 
-              onClick={onAddNewCase}
-              className="bg-[#155dfc] hover:bg-[#1447e6] gap-1 sm:gap-2 h-9 sm:h-10 px-3 sm:px-4 rounded-lg text-sm sm:text-base whitespace-nowrap"
-            >
-              <Plus className="size-4" />
-              <span className="hidden sm:inline">Add New Case</span>
-              <span className="sm:hidden">Add New Case</span>
-            </Button>
+            <div className="flex gap-2 flex-wrap">
+              <Button 
+                onClick={onManageVets}
+                variant="outline"
+                className="border-[#e2e8f0] gap-1 sm:gap-2 h-9 sm:h-10 px-3 sm:px-4 rounded-lg text-sm sm:text-base whitespace-nowrap text-[#0a0a0a]"
+              >
+                <Stethoscope className="size-4" />
+                <span className="hidden sm:inline">Manage Vets</span>
+                <span className="sm:hidden">Vets</span>
+              </Button>
+              <Button 
+                onClick={onAddNewCase}
+                className="bg-[#155dfc] hover:bg-[#1447e6] gap-1 sm:gap-2 h-9 sm:h-10 px-3 sm:px-4 rounded-lg text-sm sm:text-base whitespace-nowrap"
+              >
+                <Plus className="size-4" />
+                <span className="hidden sm:inline">Add New Case</span>
+                <span className="sm:hidden">Add New Case</span>
+              </Button>
+            </div>
           </div>
         </div>
       </header>
