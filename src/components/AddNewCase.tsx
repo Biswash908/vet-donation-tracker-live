@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { ArrowLeft, Upload, X, FileText, Loader2, Plus } from 'lucide-react';
@@ -9,11 +10,8 @@ import { createInvoice, uploadFileToStorage, fetchVets, type DonationLink, type 
 import MultiPhotoUpload from './MultiPhotoUpload';
 import VetSelector from './VetSelector';
 
-interface AddNewCaseProps {
-  onBack: () => void;
-}
-
-export default function AddNewCase({ onBack }: AddNewCaseProps) {
+export default function AddNewCase() {
+  const navigate = useNavigate();
   const [newCase, setNewCase] = useState({
     animal_name: '',
     medical_condition: '',
@@ -111,7 +109,7 @@ export default function AddNewCase({ onBack }: AddNewCaseProps) {
     if (hasUnsavedChanges() && !confirm('You have unsaved changes. Are you sure you want to leave? Your changes will not be saved.')) {
       return;
     }
-    onBack();
+    navigate('/admin-dashboard');
   };
 
   useEffect(() => {
@@ -209,7 +207,7 @@ export default function AddNewCase({ onBack }: AddNewCaseProps) {
       setInvoiceFiles([]);
       setSelectedVetId('');
       
-      onBack();
+      navigate('/admin-dashboard');
     } catch (error) {
       console.error('Error publishing case:', error);
       alert('Failed to publish case. Please try again.');

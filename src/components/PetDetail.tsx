@@ -1,16 +1,42 @@
 import { ArrowLeft, FileText, Heart, Instagram, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from './ui/button';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import type { Invoice, DonationLink } from '../lib/supabase';
+import { fetchInvoices } from '../lib/supabase';
 import PhotoCarousel from './PhotoCarousel';
 
-interface PetDetailProps {
-  pet: Invoice;
-  onBack: () => void;
-}
+export default function PetDetail() {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const [pet, setPet] = useState<Invoice | null>(null);
+  const [loading, setLoading] = useState(true);
 
-export default function PetDetail({ pet, onBack }: PetDetailProps) {
+  useEffect(() => {
+    const loadPet = async () => {
+      try {
+        const invoices = await fetchInvoices();
+        const found = invoices.find(p => p.id === id);
+        if (found) {
+          setPet(found);
+        } else {
+          navigate('/');
+        }
+      } catch (error) {
+        console.error('Failed to load pet:', error);
+        navigate('/');
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadPet();
+  }, [id, navigate]);
+
   const [invoicesOpen, setInvoicesOpen] = useState(false);
+
+  if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  if (!pet) return <div className="min-h-screen flex items-center justify-center">Pet not found</div>;
+
   const totalDonated = (pet.donations || []).reduce((sum, d) => sum + d.amount, 0);
   const progressPercentage = Math.round((totalDonated / pet.estimated_cost) *100);
   const stillNeeded = pet.estimated_cost - totalDonated;
@@ -440,14 +466,13 @@ export default function PetDetail({ pet, onBack }: PetDetailProps) {
                 </h3>
                 
                 {/* Invoice Dropdown Toggle */}
-                <button
-                  onClick={() => setInvoicesOpen(!invoicesOpen)}
-                  className="flex items-center gap-1 text-[#155dfc] hover:text-[#1447e6] transition-colors"
-                >
-                  <FileText className="size-4" />
-                  <span className="text-sm font-medium">Invoice</span>
-                  {invoicesOpen ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
-                </button>
+      <button
+        onClick={() => navigate('/')}
+        className="flex items-center gap-2 text-slate-600 hover:text-slate-800 transition-colors"
+      >
+        <ArrowLeft className="w-5 h-5" />
+        Back
+      </button>
               </div>
 
 {/* Invoice Dropdown - Desktop */}

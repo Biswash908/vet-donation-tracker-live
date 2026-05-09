@@ -1,25 +1,23 @@
 import { Plus, Edit, ArrowLeft, Stethoscope } from 'lucide-react';
 import { Button } from './ui/button';
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { fetchInvoices, Invoice } from '../lib/supabase';
 
-interface AdminDashboardProps {
-  onBack: () => void;
-  onAddNewCase: () => void;
-  onEditCase: (petId: string) => void;
-  onManageVets: () => void;
-}
-
-export default function AdminDashboard({ onBack, onAddNewCase, onEditCase, onManageVets }: AdminDashboardProps) {
+export default function AdminDashboard() {
+  const navigate = useNavigate();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-  const isAdmin = localStorage.getItem("isAdmin");
-  if (!isAdmin) {
-    window.location.href = "/";
-  }
-}, []);
+    const adminStatus = localStorage.getItem("isAdmin");
+    if (!adminStatus) {
+      navigate("/admin-login");
+      return;
+    }
+    setIsAdmin(true);
+  }, [navigate]);
 
   useEffect(() => {
     const loadInvoices = async () => {
@@ -36,6 +34,10 @@ export default function AdminDashboard({ onBack, onAddNewCase, onEditCase, onMan
     loadInvoices();
   }, []);
 
+  if (!isAdmin) {
+    return <div className="min-h-screen flex items-center justify-center">Checking authentication...</div>;
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#eff6ff] to-white">
       {/* Header */}
@@ -44,7 +46,7 @@ export default function AdminDashboard({ onBack, onAddNewCase, onEditCase, onMan
           <div className="flex items-center justify-between flex-wrap gap-3 h-auto min-h-16 sm:min-h-20 py-3 sm:py-0">
             <div className="flex items-center gap-2 sm:gap-4 min-w-0">
               <Button 
-                onClick={onBack}
+                onClick={() => navigate('/')}
                 variant="ghost"
                 size="sm"
                 className="gap-1 sm:gap-2 text-[#0a0a0a] hover:bg-slate-100 flex-shrink-0"
@@ -63,7 +65,7 @@ export default function AdminDashboard({ onBack, onAddNewCase, onEditCase, onMan
             
             <div className="flex gap-2 flex-wrap">
               <Button 
-                onClick={onManageVets}
+                onClick={() => navigate('/vet-management')}
                 variant="outline"
                 className="border-[#e2e8f0] gap-1 sm:gap-2 h-9 sm:h-10 px-3 sm:px-4 rounded-lg text-sm sm:text-base whitespace-nowrap text-[#0a0a0a]"
               >
@@ -72,7 +74,7 @@ export default function AdminDashboard({ onBack, onAddNewCase, onEditCase, onMan
                 <span className="sm:hidden">Vets</span>
               </Button>
               <Button 
-                onClick={onAddNewCase}
+                onClick={() => navigate('/admin-add-case')}
                 className="bg-[#155dfc] hover:bg-[#1447e6] gap-1 sm:gap-2 h-9 sm:h-10 px-3 sm:px-4 rounded-lg text-sm sm:text-base whitespace-nowrap"
               >
                 <Plus className="size-4" />
@@ -101,7 +103,7 @@ export default function AdminDashboard({ onBack, onAddNewCase, onEditCase, onMan
               <CaseCard 
                 key={pet.id} 
                 pet={pet}
-                onEdit={() => onEditCase(pet.id)}
+                onEdit={() => navigate(`/admin-edit-case/${pet.id}`)}
               />
             ))}
           </div>

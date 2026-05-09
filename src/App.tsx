@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { Routes, Route } from 'react-router-dom';
 import Home from './components/Home';
 import PetDetail from './components/PetDetail';
 import AddNewCase from './components/AddNewCase';
@@ -6,107 +6,19 @@ import AdminDashboard from './components/AdminDashboard';
 import AdminLogin from './components/AdminLogin';
 import EditCase from './components/EditCase';
 import VetManagement from './components/VetManagement';
-import { fetchInvoices, Invoice } from './lib/supabase';
 
 export default function App() {
-  const [selectedPetId, setSelectedPetId] = useState<string | null>(null);
-  const [currentView, setCurrentView] = useState<'home' | 'admin-login' | 'admin-dashboard' | 'admin-add-case' | 'admin-edit-case' | 'vet-management'>('home');
-  const [editingPetId, setEditingPetId] = useState<string | null>(null);
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [refreshKey, setRefreshKey] = useState(0);
-
-  useEffect(() => {
-    const loadInvoices = async () => {
-      try {
-        const data = await fetchInvoices();
-        setInvoices(data);
-      } catch (error) {
-        console.error('Failed to load invoices:', error);
-      }
-    };
-
-    loadInvoices();
-  }, [refreshKey]);
-
-  const selectedPet = selectedPetId 
-    ? invoices.find(pet => pet.id === selectedPetId) 
-    : null;
-
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [currentView, selectedPetId]);
-
-  const handleRefresh = () => {
-    setRefreshKey(prev => prev + 1);
-  };
-
-  const content = (() => {
-    if (currentView === 'admin-login') {
-      return (
-        <AdminLogin 
-          onLogin={() => setCurrentView('admin-dashboard')}
-          onBack={() => setCurrentView('home')}
-        />
-      );
-    }
-
-    if (currentView === 'admin-dashboard') {
-      return (
-        <AdminDashboard 
-          onBack={() => setCurrentView('home')} 
-          onAddNewCase={() => setCurrentView('admin-add-case')}
-          onEditCase={(petId) => {
-            setEditingPetId(petId);
-            setCurrentView('admin-edit-case');
-          }}
-          onManageVets={() => setCurrentView('vet-management')}
-        />
-      );
-    }
-
-    if (currentView === 'vet-management') {
-      return (
-        <VetManagement 
-          onBack={() => setCurrentView('admin-dashboard')}
-        />
-      );
-    }
-
-    if (currentView === 'admin-add-case') {
-      return <AddNewCase onBack={() => {
-        setCurrentView('admin-dashboard');
-        handleRefresh();
-      }} />;
-    }
-
-    if (currentView === 'admin-edit-case' && editingPetId) {
-      return (
-        <EditCase 
-          petId={editingPetId} 
-          onBack={() => {
-            setEditingPetId(null);
-            setCurrentView('admin-dashboard');
-            handleRefresh();
-          }}
-        />
-      );
-    }
-
-    if (selectedPet) {
-      return (
-        <PetDetail 
-          pet={selectedPet} 
-          onBack={() => setSelectedPetId(null)} 
-        />
-      );
-    }
-
-    return <Home onSelectPet={(id) => setSelectedPetId(id)} onAdminClick={() => setCurrentView('admin-login')} />;
-  })();
-
   return (
     <div className="min-h-screen overflow-x-hidden">
-      {content}
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/pet/:id" element={<PetDetail />} />
+        <Route path="/admin-login" element={<AdminLogin />} />
+        <Route path="/admin-dashboard" element={<AdminDashboard />} />
+        <Route path="/admin-add-case" element={<AddNewCase />} />
+        <Route path="/admin-edit-case/:id" element={<EditCase />} />
+        <Route path="/vet-management" element={<VetManagement />} />
+      </Routes>
     </div>
   );
 }

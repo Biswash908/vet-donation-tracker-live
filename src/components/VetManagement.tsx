@@ -1,15 +1,13 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Plus, Trash2, ArrowLeft } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { fetchVets, addVet, deleteVet, type Vet } from '../lib/supabase';
 
-interface VetManagementProps {
-  onBack: () => void;
-}
-
-export default function VetManagement({ onBack }: VetManagementProps) {
+export default function VetManagement() {
+  const navigate = useNavigate();
   const [vets, setVets] = useState<Vet[]>([]);
   const [loading, setLoading] = useState(true);
   const [newVetName, setNewVetName] = useState('');
@@ -78,7 +76,7 @@ export default function VetManagement({ onBack }: VetManagementProps) {
           <div className="flex items-center justify-between flex-wrap gap-3 h-auto min-h-16 sm:min-h-20 py-3 sm:py-0">
             <div className="flex items-center gap-2 sm:gap-4 min-w-0">
               <Button 
-                onClick={onBack}
+                onClick={() => navigate('/admin-dashboard')}
                 variant="ghost"
                 size="sm"
                 className="gap-1 sm:gap-2 text-[#0a0a0a] hover:bg-slate-100 flex-shrink-0"

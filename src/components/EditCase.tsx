@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { ArrowLeft, Trash2, Plus, X, Save, FileText, Loader2, Link } from 'lucide-react';
@@ -9,12 +10,9 @@ import { fetchInvoiceById, updateInvoice, deleteInvoice, addDonation, deleteDona
 import MultiPhotoUpload from './MultiPhotoUpload';
 import VetSelector from './VetSelector';
 
-interface EditCaseProps {
-  petId: string;
-  onBack: () => void;
-}
-
-export default function EditCase({ petId, onBack }: EditCaseProps) {
+export default function EditCase() {
+  const { id: petId } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [pet, setPet] = useState<Invoice | null>(null);
   const [loading, setLoading] = useState(true);
   const [editedCase, setEditedCase] = useState({
@@ -166,7 +164,7 @@ export default function EditCase({ petId, onBack }: EditCaseProps) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white p-8">
         <p className="text-center text-slate-600">Case not found</p>
-        <Button onClick={onBack} className="mt-4">Go Back</Button>
+        <Button onClick={() => navigate('/admin-dashboard')} className="mt-4">Go Back</Button>
       </div>
     );
   }
@@ -197,7 +195,7 @@ export default function EditCase({ petId, onBack }: EditCaseProps) {
     if (hasUnsavedChanges() && !confirm('You have unsaved changes. Are you sure you want to leave? Your changes will not be saved.')) {
       return;
     }
-    onBack();
+    navigate('/admin-dashboard');
   };
 
   const handleSave = async () => {
@@ -274,7 +272,7 @@ export default function EditCase({ petId, onBack }: EditCaseProps) {
       setInvoiceFiles([]);
       setExistingInvoiceUrls(finalInvoiceUrls);
       setOriginalInvoiceUrls(finalInvoiceUrls);
-      onBack();
+      navigate('/admin-dashboard');
     } catch (error: any) {
       console.error('Error saving case:', error);
       alert(`Failed to save: ${error.message || 'Unknown error'}`);
@@ -287,9 +285,9 @@ export default function EditCase({ petId, onBack }: EditCaseProps) {
     if (confirm(`Are you sure you want to delete ${pet.animal_name}'s case? This action cannot be undone.`)) {
       setIsDeleting(true);
       try {
-        await deleteInvoice(petId);
+        await deleteInvoice(petId!);
         alert('Case deleted successfully!');
-        onBack();
+        navigate('/admin-dashboard');
       } catch (error) {
         console.error('Error deleting case:', error);
         alert('Failed to delete case. Please try again.');

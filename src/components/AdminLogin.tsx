@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
@@ -7,12 +8,8 @@ import { supabase } from "../lib/supabase"; // Ensure this path is correct
 
 const logo = "/JLT.png";
 
-interface AdminLoginProps {
-  onLogin: () => void;
-  onBack: () => void;
-}
-
-export default function AdminLogin({ onLogin, onBack }: AdminLoginProps) {
+export default function AdminLogin() {
+  const navigate = useNavigate();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -38,7 +35,7 @@ const handleSubmit = async (e: React.FormEvent) => {
     
     // If successful, save the flag and move on
     localStorage.setItem("isAdmin", "true");
-    onLogin();
+    navigate('/admin-dashboard');
 
   } catch (err: any) {
     console.error("Auth Error:", err.message);
@@ -58,7 +55,7 @@ const handleSubmit = async (e: React.FormEvent) => {
         <Button
           variant="ghost"
           size="sm"
-          onClick={onBack}
+          onClick={() => navigate('/')}
           className="gap-2 text-slate-600 hover:text-slate-900 hover:bg-white/70 rounded-lg"
           disabled={loading}
         >

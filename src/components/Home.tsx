@@ -2,15 +2,11 @@ import { Input } from '@/components/ui/input';
 import { fetchInvoices, fetchVets, Invoice, Vet } from '@/lib/supabase';
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import svgPaths from '@/imports/svg-2n5pj4qi5n';
 
 
 const logo = '/JLT.png';
-
-interface HomeProps {
-  onSelectPet: (id: string) => void;
-  onAdminClick: () => void;
-}
 
 // ─── Search Bar ───────────────────────────────────────────────────────────────
 
@@ -185,13 +181,15 @@ function VetFilter({
 
 // ─── Home ─────────────────────────────────────────────────────────────────────
 
-export default function Home({ onSelectPet, onAdminClick }: HomeProps) {
+export default function Home() {
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState('');
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [vets, setVets] = useState<Vet[]>([]);
-  const [selectedVetFilter, setSelectedVetFilter] = useState<string>('');
+  const [selectedVetFilter, setSelectedVetFilter] = useState<string>(searchParams.get('vet') || '');
 
   useEffect(() => {
     const loadData = async () => {
@@ -217,6 +215,16 @@ export default function Home({ onSelectPet, onAdminClick }: HomeProps) {
     };
     loadData();
   }, []);
+
+  // Sync selectedVetFilter with URL
+  const handleVetFilterChange = (vetId: string) => {
+    setSelectedVetFilter(vetId);
+    if (vetId) {
+      setSearchParams({ vet: vetId });
+    } else {
+      setSearchParams({});
+    }
+  };
 
   const totalRaised = invoices.reduce((sum, pet) =>
     sum + (pet.donations?.reduce((donSum, d) => donSum + d.amount, 0) || 0), 0
@@ -295,7 +303,7 @@ export default function Home({ onSelectPet, onAdminClick }: HomeProps) {
                 <VetFilter
                   vets={vets}
                   selected={selectedVetFilter}
-                  onSelect={setSelectedVetFilter}
+                  onSelect={handleVetFilterChange}
                 />
               )}
             </div>
@@ -306,7 +314,7 @@ export default function Home({ onSelectPet, onAdminClick }: HomeProps) {
 
                   <button
                     type="button"
-                    onClick={() => setSelectedVetFilter('')}
+                    onClick={() => handleVetFilterChange('')}
                     className="w-4 h-4 rounded-full flex items-center justify-center hover:bg-[#155dfc]/10 transition-colors ml-0.5"
                     aria-label="Remove vet filter"
                   >
@@ -351,7 +359,7 @@ export default function Home({ onSelectPet, onAdminClick }: HomeProps) {
             {!loading && (
               <div className="hidden lg:grid lg:grid-cols-3 gap-6">
                 {filteredInvoices.map((pet) => (
-                  <CampaignCardDesktop key={pet.id} pet={pet} onClick={() => onSelectPet(pet.id)} />
+                  <CampaignCardDesktop key={pet.id} pet={pet} onClick={() => navigate(`/pet/${pet.id}`)} />
                 ))}
               </div>
             )}
@@ -359,7 +367,7 @@ export default function Home({ onSelectPet, onAdminClick }: HomeProps) {
             {!loading && (
               <div className="lg:hidden space-y-4">
                 {filteredInvoices.map((pet) => (
-                  <CampaignCardMobile key={pet.id} pet={pet} onClick={() => onSelectPet(pet.id)} />
+                  <CampaignCardMobile key={pet.id} pet={pet} onClick={() => navigate(`/pet/${pet.id}`)} />
                 ))}
               </div>
             )}
@@ -381,7 +389,7 @@ export default function Home({ onSelectPet, onAdminClick }: HomeProps) {
         {/* Admin Button */}
         <div className="px-4 sm:px-6 lg:px-8 py-4 flex justify-center">
           <button
-            onClick={onAdminClick}
+            onClick={() => navigate('/admin-login')}
             className="text-sm px-6 py-2.5 border-2 border-[#155dfc] text-[#155dfc] bg-transparent rounded-lg hover:bg-[#155dfc]/10 focus:ring-2 focus:ring-[#155dfc]/30 focus:ring-offset-2 transition-colors font-medium"
           >
             Log in as admin
