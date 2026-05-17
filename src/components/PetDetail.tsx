@@ -3,7 +3,7 @@ import { Button } from './ui/button';
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import type { Invoice, DonationLink } from '../lib/supabase';
-import { fetchInvoices } from '../lib/supabase';
+import { fetchInvoiceById, fetchInvoices } from '../lib/supabase';
 import PhotoCarousel from './PhotoCarousel';
 
 export default function PetDetail() {
@@ -14,12 +14,23 @@ export default function PetDetail() {
 
   useEffect(() => {
     const loadPet = async () => {
+      if (!id) {
+        navigate('/');
+        return;
+      }
+
       try {
-        const invoices = await fetchInvoices();
-        const found = invoices.find(p => p.id === id);
+        let found = await fetchInvoiceById(id);
+
+        if (!found) {
+          const invoices = await fetchInvoices();
+          found = invoices.find((invoice) => invoice.id === id) || null;
+        }
+
         if (found) {
           setPet(found);
         } else {
+          console.error('Invoice not found for id:', id);
           navigate('/');
         }
       } catch (error) {
@@ -33,21 +44,29 @@ export default function PetDetail() {
   }, [id, navigate]);
 
   const [invoicesOpen, setInvoicesOpen] = useState(false);
+  const onBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate('/');
+    }
+  };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   if (!pet) return <div className="min-h-screen flex items-center justify-center">Pet not found</div>;
 
-  const totalDonated = (pet.donations || []).reduce((sum, d) => sum + d.amount, 0);
-  const progressPercentage = Math.round((totalDonated / pet.estimated_cost) *100);
-  const stillNeeded = pet.estimated_cost - totalDonated;
-  const isFunded = totalDonated >= pet.estimated_cost;
+  const totalDonated = (pet.donations || []).reduce((sum, d) => sum + (d?.amount ?? 0), 0);
+  const estimatedCost = pet.estimated_cost || 0;
+  const progressPercentage = estimatedCost > 0 ? Math.round((totalDonated / estimatedCost) * 100) : 0;
+  const stillNeeded = Math.max(estimatedCost - totalDonated, 0);
+  const isFunded = estimatedCost > 0 ? totalDonated >= estimatedCost : totalDonated > 0;
 
   // Use same displayStatus logic as Home page
-  let displayStatus = pet.status;
-  if (pet.status === 'pending' && totalDonated > 0) {
+  let displayStatus = pet.status || 'pending';
+  if (displayStatus === 'pending' && totalDonated > 0) {
     displayStatus = 'partially_funded';
   }
-  if (totalDonated >= pet.estimated_cost) {
+  if (estimatedCost > 0 && totalDonated >= estimatedCost) {
     displayStatus = 'funded';
   }
 
@@ -464,15 +483,6 @@ export default function PetDetail() {
                 <h3 className="text-[17px] font-medium text-[#0f172b]">
                   Funding Progress
                 </h3>
-                
-                {/* Invoice Dropdown Toggle */}
-      <button
-        onClick={() => navigate('/')}
-        className="flex items-center gap-2 text-slate-600 hover:text-slate-800 transition-colors"
-      >
-        <ArrowLeft className="w-5 h-5" />
-        Back
-      </button>
               </div>
 
 {/* Invoice Dropdown - Desktop */}
