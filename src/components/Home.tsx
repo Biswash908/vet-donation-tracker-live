@@ -416,9 +416,9 @@ function resolveStatus(pet: Invoice) {
 }
 
 const STATUS_STYLES: Record<string, { border: string; bg: string; color: string }> = {
-  pending:          { border: '#fde047', bg: '#fef3c7', color: '#92400e' },
+  pending:          { border: '#fca5a5', bg: '#fee2e2', color: '#7f1d1d' },
   active:           { border: '#7dd3fc', bg: '#dbeafe', color: '#193cb8' },
-  partially_funded: { border: '#fecaca', bg: '#fca5a5', color: '#7f1d1d' },
+  partially_funded: { border: '#fb923c', bg: '#ffedd5', color: '#c2410c' },
   closed:           { border: '#d1d5db', bg: '#e5e7eb', color: '#374151' },
   funded:           { border: '#86efac', bg: '#dcfce7', color: '#16a34a' },
 };

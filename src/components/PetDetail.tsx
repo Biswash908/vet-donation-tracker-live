@@ -152,26 +152,26 @@ export default function PetDetail() {
                 {pet.animal_name}
               </h2>
               <div 
-                className="px-3 py-1 rounded-lg border text-xs leading-4 whitespace-nowrap flex-shrink-0 font-medium"
+                className="px-3 py-1 rounded-lg border text-xs leading-4 whitespace-nowrap flex-shrink-0 font-medium shadow-sm"
                 style={{
                   borderColor:
-                    displayStatus === 'pending' ? '#fde047' :
+                    displayStatus === 'pending' ? '#fca5a5' :
                     displayStatus === 'active' ? '#7dd3fc' :
-                    displayStatus === 'partially_funded' ? '#fecaca' :
+                    displayStatus === 'partially_funded' ? '#fb923c' :
                     displayStatus === 'closed' ? '#d1d5db' :
                     '#86efac',
 
                   backgroundColor:
-                    displayStatus === 'pending' ? '#fef3c7' :
+                    displayStatus === 'pending' ? '#fee2e2' :
                     displayStatus === 'active' ? '#dbeafe' :
-                    displayStatus === 'partially_funded' ? '#fca5a5' :
+                    displayStatus === 'partially_funded' ? '#ffedd5' :
                     displayStatus === 'closed' ? '#e5e7eb' :
                     '#dcfce7',
 
                   color:
-                    displayStatus === 'pending' ? '#92400e' :
+                    displayStatus === 'pending' ? '#7f1d1d' :
                     displayStatus === 'active' ? '#193cb8' :
-                    displayStatus === 'partially_funded' ? '#7f1d1d' :
+                    displayStatus === 'partially_funded' ? '#c2410c' :
                     displayStatus === 'closed' ? '#374151' :
                     '#16a34a'
                 }}
@@ -378,26 +378,26 @@ export default function PetDetail() {
                   </h2>
                 </div>
                 <div 
-                  className="px-2.5 py-0.5 rounded-lg border text-xs leading-4 font-medium"
+                  className="px-2.5 py-0.5 rounded-lg border text-xs leading-4 font-medium shadow-sm"
                   style={{
                     borderColor:
-                      displayStatus === 'pending' ? '#fde047' :
+                      displayStatus === 'pending' ? '#fca5a5' :
                       displayStatus === 'active' ? '#7dd3fc' :
-                      displayStatus === 'partially_funded' ? '#fecaca' :
+                      displayStatus === 'partially_funded' ? '#fb923c' :
                       displayStatus === 'closed' ? '#d1d5db' :
                       '#86efac',
 
                     backgroundColor:
-                      displayStatus === 'pending' ? '#fef3c7' :
+                      displayStatus === 'pending' ? '#fee2e2' :
                       displayStatus === 'active' ? '#dbeafe' :
-                      displayStatus === 'partially_funded' ? '#fca5a5' :
+                      displayStatus === 'partially_funded' ? '#ffedd5' :
                       displayStatus === 'closed' ? '#e5e7eb' :
                       '#dcfce7',
 
                     color:
-                      displayStatus === 'pending' ? '#92400e' :
+                      displayStatus === 'pending' ? '#7f1d1d' :
                       displayStatus === 'active' ? '#193cb8' :
-                      displayStatus === 'partially_funded' ? '#7f1d1d' :
+                      displayStatus === 'partially_funded' ? '#c2410c' :
                       displayStatus === 'closed' ? '#374151' :
                       '#16a34a'
                   }}
@@ -483,9 +483,17 @@ export default function PetDetail() {
                 <h3 className="text-[17px] font-medium text-[#0f172b]">
                   Funding Progress
                 </h3>
+                <button
+                  onClick={() => setInvoicesOpen(!invoicesOpen)}
+                  className="flex items-center gap-1 text-[#155dfc] hover:text-[#1447e6] transition-colors"
+                >
+                  <FileText className="size-4" />
+                  <span className="text-sm font-medium">Invoice</span>
+                  {invoicesOpen ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
+                </button>
               </div>
 
-{/* Invoice Dropdown - Desktop */}
+              {/* Invoice Dropdown - Desktop */}
 {invoicesOpen && (
   <div className="mb-6 bg-[#f8fafc] border border-[#e2e8f0] rounded-lg p-4">
     <h4 className="text-sm font-medium text-[#0f172b] mb-3">Uploaded Invoices</h4>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
@@ -9,6 +9,16 @@ import { Textarea } from './ui/textarea';
 import { createInvoice, uploadFileToStorage, fetchVets, type DonationLink, type Vet } from '../lib/supabase';
 import MultiPhotoUpload from './MultiPhotoUpload';
 import VetSelector from './VetSelector';
+
+const STANDARD_DONATION_LABELS = [
+  'Donate Now',
+  'Donate 50 AED',
+  'Donate 100 AED',
+  'Donate 200 AED',
+  'Donate 500 AED',
+  'Donate 1000 AED',
+  'Support with Donation',
+];
 
 export default function AddNewCase() {
   const navigate = useNavigate();
@@ -30,6 +40,9 @@ export default function AddNewCase() {
   const [isLoading, setIsLoading] = useState(false);
   const [vets, setVets] = useState<Vet[]>([]);
   const [selectedVetId, setSelectedVetId] = useState<string>('');
+  const [labelDropdownOpen, setLabelDropdownOpen] = useState(false);
+  const [customLabelMode, setCustomLabelMode] = useState(false);
+  const labelDropdownRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const loadVets = async () => {
@@ -42,6 +55,17 @@ export default function AddNewCase() {
     };
     loadVets();
   }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (labelDropdownOpen && labelDropdownRef.current && !labelDropdownRef.current.contains(event.target as Node)) {
+        setLabelDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [labelDropdownOpen]);
 
   const handlePhotoUpload = (files: File[]) => {
     const newFiles = [...photoFiles, ...files];
@@ -243,7 +267,7 @@ export default function AddNewCase() {
       </header>
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-3xl">
-        <Card className="bg-white">
+        <Card className="bg-white overflow-visible">
           <CardHeader>
             <CardTitle className="text-2xl">Add New Case</CardTitle>
             <CardDescription>Enter the details for the new case</CardDescription>
@@ -303,14 +327,99 @@ export default function AddNewCase() {
                       onChange={(e) => setNewDonationLink({ ...newDonationLink, url: e.target.value })}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="donation-label" className="text-sm text-gray-600">Label (Optional)</Label>
-                    <Input
-                      id="donation-label"
-                      placeholder="e.g., Google Pay, Bank Transfer, etc."
-                      value={newDonationLink.label}
-                      onChange={(e) => setNewDonationLink({ ...newDonationLink, label: e.target.value })}
-                    />
+                  <div className="space-y-2 relative overflow-visible z-[100]" ref={labelDropdownRef}>
+                    <Label htmlFor="donation-label-selector" className="text-sm text-gray-600">Button Label (Optional)</Label>
+
+                    {/* Control that looks like VetSelector: either text or input, with arrow inside */}
+                    <div className="relative">
+                      {customLabelMode ? (
+                        <input
+                          id="donation-label-input"
+                          placeholder="Type a custom label"
+                          value={newDonationLink.label}
+                          onChange={(e) => setNewDonationLink({ ...newDonationLink, label: e.target.value })}
+                          className="w-full h-10 px-3 pr-10 rounded-lg bg-[#f3f3f5] border-0 text-sm text-[#0f172b]"
+                        />
+                      ) : (
+                        <button
+                          type="button"
+                          id="donation-label-selector"
+                          onClick={() => setLabelDropdownOpen(prev => !prev)}
+                          className="w-full h-10 px-3 pr-10 rounded-lg bg-[#f3f3f5] border-0 text-sm text-left flex items-center"
+                        >
+                          <span className={newDonationLink.label ? 'text-[#0f172b]' : 'text-[#717182]'}>
+                            {newDonationLink.label || 'Select a recommended label'}
+                          </span>
+                        </button>
+                      )}
+
+                      {/* Arrow placed inside the control on the right, matching VetSelector */}
+                      <button
+                        type="button"
+                        onClick={() => setLabelDropdownOpen(prev => !prev)}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 h-6 w-6 flex items-center justify-center text-[#90a1b9]"
+                        aria-label="Toggle donation label dropdown"
+                      >
+                        <svg
+                          className={`w-4 h-4 transition-transform ${labelDropdownOpen ? 'rotate-180' : ''}`}
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeWidth={2}
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M6 9l6 6 6-6"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-3">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCustomLabelMode(prev => !prev);
+                          setLabelDropdownOpen(false);
+                        }}
+                        className="text-sm text-[#0f172b] underline"
+                      >
+                        {customLabelMode ? 'Use standard labels' : 'Custom label'}
+                      </button>
+                      {customLabelMode && (
+                        <p className="text-xs text-[#64748b]">Tap the arrow to open suggested labels.</p>
+                      )}
+
+                    </div>
+
+                    {labelDropdownOpen && (
+                      <div
+                        className="fixed pointer-events-auto bg-white border border-[#e2e8f0] rounded-lg shadow-xl max-h-60 overflow-y-auto z-[99999]"
+                        style={{
+                          width: labelDropdownRef.current?.offsetWidth,
+                          top: (labelDropdownRef.current?.getBoundingClientRect().bottom || 0) + 8,
+                          left: labelDropdownRef.current?.getBoundingClientRect().left || 0,
+                        }}
+                      >
+                        {STANDARD_DONATION_LABELS.map((option) => (
+                          <button
+                            key={option}
+                            type="button"
+                            onClick={() => {
+                              setNewDonationLink({ ...newDonationLink, label: option });
+                              setLabelDropdownOpen(false);
+                              setCustomLabelMode(false);
+                            }}
+                            className="w-full px-3 py-2 text-left text-sm flex items-center justify-between text-[#0f172b] hover:bg-[#f1f5f9]"
+                          >
+                            <span>{option}</span>
+                          </button>
+                        ))}
+
+                        {/* Removed inline 'Custom label' action from dropdown; use the toggle below the control */}
+                      </div>
+                    )}
                   </div>
                   <Button
                     type="button"
@@ -347,7 +456,7 @@ export default function AddNewCase() {
                 </div>
               </div>
               
-              <div className="space-y-2">
+              <div className="space-y-2 relative z-0">
                 <Label>Pet Photos *</Label>
                 <MultiPhotoUpload
                   photos={photoPreviewUrls}
