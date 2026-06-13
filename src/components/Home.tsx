@@ -1,12 +1,22 @@
 import { Input } from '@/components/ui/input';
 import { fetchInvoices, fetchVets, Invoice, Vet } from '@/lib/supabase';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import svgPaths from '@/imports/svg-2n5pj4qi5n';
 
 
 const logo = '/JLT.png';
+
+const STATUS_OPTIONS = [
+  { value: 'pending', label: 'Pending' },
+  { value: 'active', label: 'Active' },
+  { value: 'partially_funded', label: 'Partial' },
+  { value: 'funded', label: 'Funded' },
+  { value: 'closed', label: 'Closed' },
+] as const;
+
+type StatusType = (typeof STATUS_OPTIONS)[number]['value'];
 
 // ─── Search Bar ───────────────────────────────────────────────────────────────
 
@@ -190,6 +200,12 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [vets, setVets] = useState<Vet[]>([]);
   const [selectedVetFilter, setSelectedVetFilter] = useState<string>(searchParams.get('vet') || '');
+  const [statusFilters, setStatusFilters] = useState<StatusType[]>([]);
+  const [statusOpen, setStatusOpen] = useState(false);
+  const statusButtonRef = useRef<HTMLButtonElement | null>(null);
+  const statusDropdownRef = useRef<HTMLDivElement | null>(null);
+  const [statusDropdownStyle, setStatusDropdownStyle] = useState<React.CSSProperties | null>(null);
+  const [sortByCreated, setSortByCreated] = useState<'newest' | 'oldest'>('newest');
 
   useEffect(() => {
     const loadData = async () => {
@@ -216,6 +232,52 @@ export default function Home() {
     loadData();
   }, []);
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (
+        statusOpen &&
+        statusDropdownRef.current &&
+        !statusDropdownRef.current.contains(target) &&
+        statusButtonRef.current &&
+        !statusButtonRef.current.contains(target)
+      ) {
+        setStatusOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [statusOpen]);
+
+  useEffect(() => {
+    if (!statusOpen) {
+      setStatusDropdownStyle(null);
+      return;
+    }
+
+    const updatePosition = () => {
+      const btn = statusButtonRef.current;
+      if (!btn) return;
+      const rect = btn.getBoundingClientRect();
+      setStatusDropdownStyle({
+        position: 'absolute',
+        top: rect.bottom + window.scrollY + 8,
+        left: rect.left + window.scrollX,
+        zIndex: 99999,
+        width: 240,
+      });
+    };
+
+    updatePosition();
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition, true);
+    return () => {
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition, true);
+    };
+  }, [statusOpen]);
+
   // Sync selectedVetFilter with URL
   const handleVetFilterChange = (vetId: string) => {
     setSelectedVetFilter(vetId);
@@ -236,17 +298,27 @@ export default function Home() {
     return totalDonated < pet.estimated_cost;
   }).length;
 
-  const filteredInvoices = invoices.filter((invoice) => {
+  const filteredInvoices = useMemo(() => {
     const query = searchQuery.toLowerCase();
-    const matchesSearch = (
-      invoice.animal_name.toLowerCase().includes(query) ||
-      invoice.animal_type.toLowerCase().includes(query) ||
-      invoice.medical_condition.toLowerCase().includes(query) ||
-      (invoice.vet_name && invoice.vet_name.toLowerCase().includes(query))
-    );
-    const matchesVetFilter = !selectedVetFilter || String(invoice.vet_id) === String(selectedVetFilter);
-    return matchesSearch && matchesVetFilter;
-  });
+    const activeStatuses = statusFilters.length > 0 ? statusFilters : STATUS_OPTIONS.map((o) => o.value as StatusType);
+    const result = invoices.filter((invoice) => {
+      const matchesSearch = (
+        invoice.animal_name.toLowerCase().includes(query) ||
+        invoice.animal_type.toLowerCase().includes(query) ||
+        invoice.medical_condition.toLowerCase().includes(query) ||
+        (invoice.vet_name && invoice.vet_name.toLowerCase().includes(query))
+      );
+      const matchesVetFilter = !selectedVetFilter || String(invoice.vet_id) === String(selectedVetFilter);
+      const matchesStatus = activeStatuses.includes(invoice.status as StatusType);
+      return matchesSearch && matchesVetFilter && matchesStatus;
+    });
+
+    return [...result].sort((a: Invoice, b: Invoice) => {
+      const aDate = new Date(a.created_at).getTime();
+      const bDate = new Date(b.created_at).getTime();
+      return sortByCreated === 'newest' ? bDate - aDate : aDate - bDate;
+    });
+  }, [invoices, searchQuery, selectedVetFilter, statusFilters, sortByCreated]);
 
   return (
     <div className="bg-white min-h-screen">
@@ -306,6 +378,72 @@ export default function Home() {
                   onSelect={handleVetFilterChange}
                 />
               )}
+
+              <div className="relative flex-shrink-0 w-[160px] sm:w-[180px]">
+                <button
+                  ref={statusButtonRef}
+                  type="button"
+                  onClick={() => setStatusOpen(v => !v)}
+                  className={`w-full h-[50px] px-3 rounded-xl flex items-center gap-2 text-[13px] font-medium ${statusFilters.length ? 'bg-[#155dfc] text-white' : 'bg-[#f1f5f9] text-[#64748b]'}`}
+                >
+                  <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 5h18M6 12h12M9 19h6" />
+                  </svg>
+                  <span className="flex-1 text-left truncate">{statusFilters.length === 0 ? 'All statuses' : `${statusFilters.length} selected`}</span>
+                </button>
+
+                {statusOpen && statusDropdownStyle && createPortal(
+                  <div
+                    ref={statusDropdownRef}
+                    style={statusDropdownStyle}
+                    className="bg-white border border-[#e2e8f0] rounded-xl shadow-lg p-3"
+                  >
+                    <div className="mb-2 flex items-center justify-between">
+                      <span className="text-sm font-semibold">Statuses</span>
+                      <button
+                        type="button"
+                        onClick={() => setStatusFilters([])}
+                        className="text-xs text-slate-600"
+                      >
+                        All
+                      </button>
+                    </div>
+                    <div className="grid gap-2">
+                      {STATUS_OPTIONS.map(option => {
+                        const selected = statusFilters.includes(option.value);
+                        return (
+                          <button
+                            key={option.value}
+                            type="button"
+                            onClick={() => {
+                              setStatusFilters((current) => {
+                                if (current.includes(option.value)) {
+                                  return current.filter((s) => s !== option.value);
+                                }
+                                return [...current, option.value];
+                              });
+                            }}
+                            className={`w-full text-left px-3 py-2 rounded-lg ${selected ? 'bg-[#eff6ff] text-[#155dfc] border border-[#cfe1ff]' : 'bg-white text-slate-700 border border-slate-100'}`}
+                          >
+                            {option.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>,
+                  document.body
+                )}
+              </div>
+              <div className="flex-shrink-0 w-[140px] sm:w-[160px]">
+                <select
+                  value={sortByCreated}
+                  onChange={(e) => setSortByCreated(e.target.value as 'newest' | 'oldest')}
+                  className="w-full h-[50px] px-3 rounded-xl bg-[#f1f5f9] text-[13px] text-[#64748b] border-0 outline-none hover:bg-[#e8edf5]"
+                >
+                  <option value="newest">Newest</option>
+                  <option value="oldest">Oldest</option>
+                </select>
+              </div>
             </div>
 
             {/* Active filter pill */}
@@ -409,9 +547,7 @@ interface CampaignCardProps {
 
 function resolveStatus(pet: Invoice) {
   const totalDonated = pet.donations?.reduce((sum, d) => sum + d.amount, 0) || 0;
-  let displayStatus = pet.status;
-  if (pet.status === 'pending' && totalDonated > 0) displayStatus = 'partially_funded';
-  if (totalDonated >= pet.estimated_cost) displayStatus = 'funded';
+  const displayStatus = pet.status;
   return { totalDonated, displayStatus };
 }
 
