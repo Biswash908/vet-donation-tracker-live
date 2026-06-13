@@ -1,14 +1,31 @@
-import { Plus, Edit, ArrowLeft, Stethoscope } from 'lucide-react';
+import { Plus, Edit, ArrowLeft, Stethoscope, Funnel, CalendarDays, ChevronDown } from 'lucide-react';
 import { Button } from './ui/button';
-import { useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useLayoutEffect, useRef, type ChangeEvent } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { fetchInvoices, Invoice } from '../lib/supabase';
+
+const STATUS_OPTIONS = [
+  { value: 'pending', label: 'Pending' },
+  { value: 'active', label: 'Active' },
+  { value: 'partially_funded', label: 'Partial' },
+  { value: 'funded', label: 'Funded' },
+  { value: 'closed', label: 'Closed' },
+] as const;
+
+type StatusType = (typeof STATUS_OPTIONS)[number]['value'];
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [statusFilters, setStatusFilters] = useState<StatusType[]>([]);
+  const [sortByCreated, setSortByCreated] = useState<'newest' | 'oldest'>('newest');
+  const [statusOpen, setStatusOpen] = useState(false);
+  const statusButtonRef = useRef<HTMLButtonElement | null>(null);
+  const statusDropdownRef = useRef<HTMLDivElement | null>(null);
+  const [dropdownStyle, setDropdownStyle] = useState<{ top: number; left: number; width: number } | null>(null);
 
   useEffect(() => {
     const adminStatus = localStorage.getItem("isAdmin");
@@ -33,6 +50,62 @@ export default function AdminDashboard() {
 
     loadInvoices();
   }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (
+        statusOpen &&
+        statusDropdownRef.current &&
+        !statusDropdownRef.current.contains(target) &&
+        statusButtonRef.current &&
+        !statusButtonRef.current.contains(target)
+      ) {
+        setStatusOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [statusOpen]);
+
+  // Position the dropdown using a portal so it escapes any parent stacking contexts.
+  useEffect(() => {
+    if (!statusOpen) {
+      setDropdownStyle(null);
+      return;
+    }
+
+    const updatePosition = () => {
+      const btn = statusButtonRef.current;
+      if (!btn) return;
+      const rect = btn.getBoundingClientRect();
+      setDropdownStyle({
+        top: rect.bottom + window.scrollY,
+        left: rect.left + window.scrollX,
+        width: 260,
+      });
+    };
+
+    updatePosition();
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition, true);
+    return () => {
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition, true);
+    };
+  }, [statusOpen]);
+
+  const filteredInvoices = useMemo(() => {
+    const activeStatuses = statusFilters.length > 0 ? statusFilters : STATUS_OPTIONS.map((option) => option.value);
+    const result = invoices.filter((invoice: Invoice) => activeStatuses.includes(invoice.status as StatusType));
+
+    return [...result].sort((a: Invoice, b: Invoice) => {
+      const aDate = new Date(a.created_at).getTime();
+      const bDate = new Date(b.created_at).getTime();
+      return sortByCreated === 'newest' ? bDate - aDate : aDate - bDate;
+    });
+  }, [invoices, statusFilters, sortByCreated]);
 
   if (!isAdmin) {
     return <div className="min-h-screen flex items-center justify-center">Checking authentication...</div>;
@@ -88,7 +161,89 @@ export default function AdminDashboard() {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
-        <h2 className="text-[20px] text-[#0a0a0a] mb-6">All Cases</h2>
+        <div className="mb-4 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h2 className="text-[20px] text-[#0a0a0a]">All Cases</h2>
+            <p className="text-sm text-[#717182] mt-1">Compact status and date controls keep the dashboard clean.</p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="relative inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 shadow-sm">
+              <Funnel className="h-4 w-4 text-slate-500" />
+              <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-600">Status</span>
+              <button
+                type="button"
+                ref={statusButtonRef}
+                onClick={() => setStatusOpen((open: boolean) => !open)}
+                className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+              >
+                {statusFilters.length === 0 ? 'All' : `${statusFilters.length} selected`}
+                <ChevronDown className={`h-4 w-4 text-slate-500 transition ${statusOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {statusOpen && dropdownStyle && createPortal(
+                <div
+                  ref={statusDropdownRef}
+                  style={{
+                    position: 'absolute',
+                    left: `${dropdownStyle.left}px`,
+                    top: `${dropdownStyle.top}px`,
+                    zIndex: 9999,
+                    width: `${dropdownStyle.width}px`,
+                  }}
+                  className="rounded-2xl border border-slate-200 bg-white p-3 shadow-xl"
+                >
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <span className="text-sm font-semibold text-slate-900">Choose statuses</span>
+                    <button
+                      type="button"
+                      onClick={() => setStatusFilters([])}
+                      className="rounded-full bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-200"
+                    >
+                      All
+                    </button>
+                  </div>
+                  <div className="grid gap-2">
+                    {STATUS_OPTIONS.map((option) => {
+                      const selected = statusFilters.includes(option.value);
+                      return (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => {
+                            setStatusFilters((current) => {
+                              if (current.includes(option.value)) {
+                                return current.filter((status) => status !== option.value);
+                              }
+                              return [...current, option.value];
+                            });
+                          }}
+                          className={`w-full rounded-2xl border px-3 py-2 text-left text-xs font-semibold transition ${selected ? 'border-[#155dfc] bg-[#eff6ff] text-[#155dfc]' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'}`}
+                        >
+                          {option.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>,
+                document.body
+              )}
+            </div>
+
+            <div className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-1 shadow-sm">
+              <CalendarDays className="h-4 w-4 text-slate-500" />
+              <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-600">Date</span>
+              <select
+                value={sortByCreated}
+                onChange={(e: ChangeEvent<HTMLSelectElement>) => setSortByCreated(e.target.value as 'newest' | 'oldest')}
+                className="min-w-[92px] rounded-full border border-transparent bg-transparent px-2 py-1 text-xs font-medium text-slate-700 outline-none focus:border-transparent focus:ring-0"
+              >
+                <option value="newest">Newest</option>
+                <option value="oldest">Oldest</option>
+              </select>
+            </div>
+          </div>
+        </div>
 
         {loading && (
           <div className="text-center py-12">
@@ -99,7 +254,7 @@ export default function AdminDashboard() {
         {/* Cases Grid */}
         {!loading && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {invoices.map((pet) => (
+            {filteredInvoices.map((pet) => (
               <CaseCard 
                 key={pet.id} 
                 pet={pet}
@@ -109,9 +264,13 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {!loading && invoices.length === 0 && (
+        {!loading && filteredInvoices.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-slate-600 text-lg">No cases yet.</p>
+            <p className="text-slate-600 text-lg">
+              {invoices.length === 0
+                ? 'No cases yet.'
+                : 'No cases match the selected filter.'}
+            </p>
           </div>
         )}
       </main>
@@ -144,9 +303,9 @@ function CaseCard({ pet, onEdit }: CaseCardProps) {
   }
 
   return (
-    <div 
-      onClick={onEdit}
-      className="bg-white border border-[#e2e8f0] rounded-[10px] p-5 shadow-sm hover:shadow-md transition-all cursor-pointer relative hover:border-[#155dfc]"
+      <div 
+    onClick={onEdit}
+    className="bg-white border border-[#e2e8f0] rounded-xl p-5 shadow-sm hover:shadow-md transition-all cursor-pointer relative hover:border-[#155dfc]"
     >
       {/* Header with name and status */}
       <div className="flex items-start justify-between mb-3">
@@ -156,6 +315,13 @@ function CaseCard({ pet, onEdit }: CaseCardProps) {
           </h3>
           <p className="text-sm text-[#717182]">
             {pet.medical_condition}
+          </p>
+          <p className="text-xs text-slate-500 mt-1">
+            Created {new Date(pet.created_at).toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric',
+            })}
           </p>
         </div>
         
